@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Usuario - FintechWallet</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; }
+        .navbar { background: #1e293b; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #334155; }
+        .navbar h1 { color: #38bdf8; font-size: 22px; }
+        .navbar a { color: #94a3b8; text-decoration: none; margin-left: 24px; font-size: 14px; }
+        .navbar a:hover { color: #38bdf8; }
+        .container { max-width: 1100px; margin: 40px auto; padding: 0 24px; }
+        .header-card { background: #1e293b; border-radius: 12px; padding: 28px; margin-bottom: 28px; border: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+        .header-card h2 { font-size: 24px; margin-bottom: 6px; }
+        .header-card p { color: #94a3b8; font-size: 14px; }
+        .badge { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+        .badge-bronce { background: #78350f; color: #fcd34d; }
+        .badge-plata { background: #1e3a5f; color: #93c5fd; }
+        .badge-oro { background: #3b2100; color: #fbbf24; }
+        .badge-platino { background: #1e1b4b; color: #a78bfa; }
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
+        .section { background: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155; margin-bottom: 24px; }
+        .section h3 { font-size: 16px; margin-bottom: 18px; color: #f1f5f9; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+        .form-group label { font-size: 12px; color: #94a3b8; text-transform: uppercase; }
+        .form-group input, .form-group select { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 9px 12px; color: #e2e8f0; font-size: 14px; width: 100%; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #38bdf8; }
+        .btn { background: #38bdf8; color: #0f172a; border: none; border-radius: 8px; padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 4px; }
+        .btn:hover { background: #0ea5e9; }
+        .btn-danger { background: #ef4444; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 4px; }
+        .btn-danger:hover { background: #dc2626; }
+        .billetera-card { background: #0f172a; border-radius: 10px; padding: 16px; margin-bottom: 12px; border: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+        .billetera-card h4 { font-size: 15px; margin-bottom: 3px; }
+        .billetera-card p { font-size: 13px; color: #94a3b8; }
+        .saldo { font-size: 20px; font-weight: 700; color: #4ade80; }
+        .txn-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #1e293b; font-size: 13px; }
+        .txn-row:last-child { border-bottom: none; }
+        .tipo-recarga { color: #4ade80; }
+        .tipo-retiro { color: #f87171; }
+        .tipo-transferencia { color: #38bdf8; }
+        .alerta { background: #1e1b4b; border-left: 3px solid #818cf8; padding: 10px 14px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; }
+        .back-link { color: #94a3b8; text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 20px; }
+        .back-link:hover { color: #38bdf8; }
+        .puntos-big { font-size: 36px; font-weight: 700; color: #38bdf8; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <h1>💳 FintechWallet</h1>
+    <div>
+        <a href="/">Inicio</a>
+        <a href="/analitica">Analítica</a>
+    </div>
+</nav>
+
+<div class="container">
+    <a href="/" class="back-link">← Volver al inicio</a>
+
+    <div class="header-card">
+        <div>
+            <h2 th:text="${usuario.nombre}">Nombre</h2>
+            <p th:text="${usuario.email}">email</p>
+            <p style="margin-top:6px;" th:text="'ID: ' + ${usuario.id}">ID</p>
+        </div>
+        <div style="text-align:right;">
+            <span class="badge"
+                  th:classappend="${usuario.nivel.name() == 'BRONCE' ? 'badge-bronce' : (usuario.nivel.name() == 'PLATA' ? 'badge-plata' : (usuario.nivel.name() == 'ORO' ? 'badge-oro' : 'badge-platino'))}"
+                  th:text="${usuario.nivel}">NIVEL</span>
+            <div style="margin-top:12px;">
+                <p style="font-size:12px;color:#94a3b8;">PUNTOS ACUMULADOS</p>
+                <p class="puntos-big" th:text="${usuario.puntosTotales}">0</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid2">
+        <!-- Billeteras -->
+        <div class="section">
+            <h3>Mis Billeteras</h3>
+            <div th:each="billetera : ${usuario.billeteras}">
+                <div class="billetera-card">
+                    <div>
+                        <h4 th:text="${billetera.nombre}">Nombre</h4>
+                        <p th:text="${billetera.tipo}">Tipo</p>
+                    </div>
+                    <div class="saldo" th:text="'$' + ${#numbers.formatDecimal(billetera.saldo,0,'COMMA',0,'POINT')}">$0</div>
+                </div>
+            </div>
+            <p th:if="${#lists.isEmpty(usuario.billeteras)}" style="color:#64748b;font-size:13px;">Sin billeteras aún.</p>
+
+            <h3 style="margin-top:20px;">Crear Billetera</h3>
+            <form th:action="@{/billetera/crear}" method="post">
+                <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
+                <div class="form-group">
+                    <label>ID Billetera</label>
+                    <input type="text" name="id" placeholder="B001" required/>
+                </div>
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" name="nombre" placeholder="Gastos diarios" required/>
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select name="tipo">
+                        <option value="GASTOS_DIARIOS">Gastos Diarios</option>
+                        <option value="AHORRO">Ahorro</option>
+                        <option value="COMPRAS">Compras</option>
+                        <option value="TRANSPORTE">Transporte</option>
+                        <option value="INVERSION">Inversión</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn">Crear Billetera</button>
+            </form>
+        </div>
+
+        <!-- Operaciones -->
+        <div>
+            <div class="section">
+                <h3>Recargar Billetera</h3>
+                <form th:action="@{/transaccion/recarga}" method="post">
+                    <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
+                    <div class="form-group">
+                        <label>ID Billetera</label>
+                        <input type="text" name="bill

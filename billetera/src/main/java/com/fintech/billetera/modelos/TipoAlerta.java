@@ -1,0 +1,11 @@
+package com.fintech.billetera.modelos;
+
+public enum TipoAlerta {
+    SALDO_BAJO,
+    TRANSACCION_PROGRAMADA_PROXIMA,
+    OPERACION_RECHAZADA,
+    ASCENSO_NIVEL,
+    CANJE_BENEFICIO,
+    RIESGO_DETECTADO,
+    TRANSACCION_REVERTIDA
+}
