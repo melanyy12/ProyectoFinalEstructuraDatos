@@ -102,7 +102,8 @@
                 <a th:href="@{/usuarios/{id}(id=${usuario.id})}" class="btn-outline">Ver detalle →</a>
             </div>
         </div>
-       <p th:if="${#lists.isEmpty(#lists.toList(usuarios))}" style="color:#64748b;">No hay usuarios registrados aún.</p>
+        <p th:if="${totalUsuarios == 0}" style="color:#64748b;">No hay usuarios registrados aún.</p>
+    </div>
 </div>
 </body>
 </html>
