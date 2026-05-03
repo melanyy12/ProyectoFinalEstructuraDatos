@@ -1,5 +1,6 @@
 package com.fintech.billetera.controladores;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,17 +14,20 @@ import com.fintech.billetera.modelos.TipoTransaccion;
 import com.fintech.billetera.modelos.Transaccion;
 import com.fintech.billetera.modelos.Usuario;
 import com.fintech.billetera.servicios.GestorOperaciones;
+import com.fintech.billetera.modelos.Billetera;
+import java.util.List;
 
 @Controller
 public class BilleteraController {
 
-    private final GestorOperaciones gestor = new GestorOperaciones();
+    @Autowired
+    private GestorOperaciones gestor;
 
     @GetMapping("/")
     public String inicio(Model model) {
-        model.addAttribute("usuarios", gestor.getUsuarios().values());
-        model.addAttribute("totalUsuarios", gestor.getUsuarios().size());
-        model.addAttribute("totalBilleteras", gestor.getBilleteras().size());
+        model.addAttribute("usuarios", gestor.getTodosUsuarios());
+        model.addAttribute("totalUsuarios", gestor.getTodosUsuarios().size());
+        model.addAttribute("totalBilleteras", gestor.getTodasBilleteras().size());
         return "index";
     }
 
@@ -37,31 +41,33 @@ public class BilleteraController {
         return "redirect:/";
     }
 
-    @PostMapping("/billetera/crear")
-    public String crearBilletera(@RequestParam String id,
-                                  @RequestParam String nombre,
-                                  @RequestParam String tipo,
-                                  @RequestParam String usuarioId) {
-        Billetera b = new Billetera(id, nombre,
-            TipoBilletera.valueOf(tipo), usuarioId);
-        gestor.registrarBilletera(b);
-        Usuario u = gestor.getUsuarios().get(usuarioId);
-        if (u != null) u.agregarBilletera(b);
-        return "redirect:/usuarios/" + usuarioId;
+    @PostMapping("/usuario/eliminar")
+    public String eliminarUsuario(@RequestParam String id) {
+        gestor.eliminarUsuario(id);
+        return "redirect:/";
     }
 
+@PostMapping("/billetera/crear")
+public String crearBilletera(@RequestParam String id,
+                              @RequestParam String nombre,
+                              @RequestParam String tipo,
+                              @RequestParam String usuarioId) {
+    Billetera b = new Billetera(id, nombre, TipoBilletera.valueOf(tipo), usuarioId);
+    gestor.registrarBilletera(b);
+    return "redirect:/usuarios/" + usuarioId;
+}
+
     @GetMapping("/usuarios/{id}")
-    public String verUsuario(@PathVariable String id, Model model) {
-        Usuario u = gestor.getUsuarios().get(id);
-        if (u == null) return "redirect:/";
-        model.addAttribute("usuario", u);
-        model.addAttribute("historial",
-            gestor.getHistoriales().get(id) != null ?
-            gestor.getHistoriales().get(id).getTodas() : new java.util.ArrayList<>());
-        model.addAttribute("alertas",
-            gestor.getColaNotificaciones().getNoLeidas());
-        return "usuario";
-    }
+public String verUsuario(@PathVariable String id, Model model) {
+    Usuario u = gestor.getUsuario(id);
+    if (u == null) return "redirect:/";
+    List<Billetera> billeteras = gestor.getBilleterasDeUsuario(id);
+    u.setBilleteras(billeteras);
+    model.addAttribute("usuario", u);
+    model.addAttribute("historial", gestor.getHistorial(id));
+    model.addAttribute("alertas", gestor.getColaNotificaciones().getNoLeidas());
+    return "usuario";
+}
 
     @PostMapping("/transaccion/recarga")
     public String recargar(@RequestParam String billeteraId,
@@ -102,14 +108,12 @@ public class BilleteraController {
 
     @GetMapping("/analitica")
     public String analitica(Model model) {
-        model.addAttribute("topUsuarios",
-            gestor.getArbol().getTopN(5));
-        model.addAttribute("ciclos",
-            gestor.getGrafo().detectarCiclo());
-        model.addAttribute("vertices",
-            gestor.getGrafo().getTotalVertices());
-        model.addAttribute("aristas",
-            gestor.getGrafo().getTotalAristas());
+        gestor.getTodosUsuarios().forEach(u -> gestor.getArbol().insertar(u));
+        model.addAttribute("topUsuarios", gestor.getArbol().getTopN(5));
+        model.addAttribute("ciclos", gestor.getGrafo().detectarCiclo());
+        model.addAttribute("vertices", gestor.getGrafo().getTotalVertices());
+        model.addAttribute("aristas", gestor.getGrafo().getTotalAristas());
+        model.addAttribute("totalTransacciones", gestor.getHistorial("").size());
         return "analitica";
     }
 }

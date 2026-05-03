@@ -75,7 +75,6 @@
     </div>
 
     <div class="grid2">
-        <!-- Billeteras -->
         <div class="section">
             <h3>Mis Billeteras</h3>
             <div th:each="billetera : ${usuario.billeteras}">
@@ -114,7 +113,6 @@
             </form>
         </div>
 
-        <!-- Operaciones -->
         <div>
             <div class="section">
                 <h3>Recargar Billetera</h3>
@@ -122,4 +120,82 @@
                     <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
                     <div class="form-group">
                         <label>ID Billetera</label>
-                        <input type="text" name="bill
+                        <input type="text" name="billeteraId" placeholder="B001" required/>
+                    </div>
+                    <div class="form-group">
+                        <label>Monto</label>
+                        <input type="number" name="monto" placeholder="100000" required/>
+                    </div>
+                    <button type="submit" class="btn">Recargar</button>
+                </form>
+            </div>
+
+            <div class="section">
+                <h3>Retirar</h3>
+                <form th:action="@{/transaccion/retiro}" method="post">
+                    <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
+                    <div class="form-group">
+                        <label>ID Billetera</label>
+                        <input type="text" name="billeteraId" placeholder="B001" required/>
+                    </div>
+                    <div class="form-group">
+                        <label>Monto</label>
+                        <input type="number" name="monto" placeholder="50000" required/>
+                    </div>
+                    <button type="submit" class="btn">Retirar</button>
+                </form>
+            </div>
+
+            <div class="section">
+                <h3>Transferir</h3>
+                <form th:action="@{/transaccion/transferencia}" method="post">
+                    <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
+                    <div class="form-group">
+                        <label>Billetera Origen</label>
+                        <input type="text" name="origenId" placeholder="B001" required/>
+                    </div>
+                    <div class="form-group">
+                        <label>Billetera Destino</label>
+                        <input type="text" name="destinoId" placeholder="B002" required/>
+                    </div>
+                    <div class="form-group">
+                        <label>Monto</label>
+                        <input type="number" name="monto" placeholder="50000" required/>
+                    </div>
+                    <button type="submit" class="btn">Transferir</button>
+                </form>
+            </div>
+
+            <div class="section">
+                <h3>Revertir última transacción</h3>
+                <form th:action="@{/transaccion/revertir}" method="post">
+                    <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
+                    <button type="submit" class="btn-danger">↩ Revertir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Historial de Transacciones</h3>
+        <div th:each="txn : ${historial}">
+            <div class="txn-row">
+                <span th:class="${txn.tipo.name() == 'RECARGA' ? 'tipo-recarga' : (txn.tipo.name() == 'RETIRO' ? 'tipo-retiro' : 'tipo-transferencia')}"
+                      th:text="${txn.tipo}">TIPO</span>
+                <span th:text="'$' + ${txn.valor}">$0</span>
+                <span th:text="${txn.estado}">ESTADO</span>
+                <span th:text="${txn.puntosGenerados} + ' pts'">0 pts</span>
+            </div>
+        </div>
+        <p th:if="${#lists.isEmpty(historial)}" style="color:#64748b;font-size:13px;">Sin transacciones aún.</p>
+    </div>
+
+    <div class="section" th:if="${not #lists.isEmpty(alertas)}">
+        <h3>Alertas</h3>
+        <div th:each="alerta : ${alertas}" class="alerta">
+            <span th:text="${alerta.mensaje}">Mensaje</span>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,15 +1,28 @@
 package com.fintech.billetera.modelos;
 
+import jakarta.persistence.*;
 import java.util.Date;
 
+@Entity
+@Table(name = "billeteras")
 public class Billetera {
+
+    @Id
     private String id;
     private String nombre;
+
+    @Enumerated(EnumType.STRING)
     private TipoBilletera tipo;
+
     private double saldo;
+
+    @Enumerated(EnumType.STRING)
     private EstadoBilletera estado;
+
     private String usuarioId;
     private Date fechaCreacion;
+
+    public Billetera() {}
 
     public Billetera(String id, String nombre, TipoBilletera tipo, String usuarioId) {
         this.id = id;
@@ -37,7 +50,6 @@ public class Billetera {
         return this.saldo >= monto;
     }
 
-    // Getters y Setters
     public String getId() { return id; }
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }
@@ -51,7 +63,6 @@ public class Billetera {
 
     @Override
     public String toString() {
-        return "Billetera{id='" + id + "', nombre='" + nombre +
-               "', tipo=" + tipo + ", saldo=" + saldo + ", estado=" + estado + "}";
+        return "Billetera{id='" + id + "', nombre='" + nombre + "', saldo=" + saldo + "}";
     }
-}
+} 

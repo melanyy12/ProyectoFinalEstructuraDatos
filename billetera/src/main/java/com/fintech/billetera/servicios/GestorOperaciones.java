@@ -1,8 +1,10 @@
 package com.fintech.billetera.servicios;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.PriorityQueue;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import com.fintech.billetera.estructuras.ArbolFidelizacion;
 import com.fintech.billetera.estructuras.ColaNotificaciones;
@@ -19,75 +21,78 @@ import com.fintech.billetera.modelos.TipoTransaccion;
 import com.fintech.billetera.modelos.Transaccion;
 import com.fintech.billetera.modelos.TxnProgramada;
 import com.fintech.billetera.modelos.Usuario;
+import com.fintech.billetera.repositorios.BilleteraRepositorio;
+import com.fintech.billetera.repositorios.TransaccionRepositorio;
+import com.fintech.billetera.repositorios.UsuarioRepositorio;
 
+@Service
 public class GestorOperaciones {
-    private HashMap<String, Usuario> usuarios;
-    private HashMap<String, Billetera> billeteras;
-    private Map<String, HistorialTransacciones> historiales;
-    private PriorityQueue<TxnProgramada> colaProgramadas;
-    private PilaReversiones pilaReversiones;
-    private ColaNotificaciones colaNotificaciones;
-    private GrafoTransacciones grafo;
-    private ArbolFidelizacion arbol;
-    private SistemaRecompensas sistemaRecompensas;
-    private DetectorComportamiento detector;
-    private MotorAnalitica analitica;
 
-    public GestorOperaciones() {
-        this.usuarios = new HashMap<>();
-        this.billeteras = new HashMap<>();
-        this.historiales = new HashMap<>();
-        this.colaProgramadas = new PriorityQueue<>(
-            (a, b) -> Integer.compare(a.getPrioridad(), b.getPrioridad()));
-        this.pilaReversiones = new PilaReversiones();
-        this.colaNotificaciones = new ColaNotificaciones();
-        this.grafo = new GrafoTransacciones();
-        this.arbol = new ArbolFidelizacion();
-        this.sistemaRecompensas = new SistemaRecompensas();
-        this.detector = new DetectorComportamiento();
-        this.analitica = new MotorAnalitica();
-    }
+    @Autowired
+    private UsuarioRepositorio usuarioRepo;
+
+    @Autowired
+    private BilleteraRepositorio billeteraRepo;
+
+    @Autowired
+    private TransaccionRepositorio transaccionRepo;
+
+    private PriorityQueue<TxnProgramada> colaProgramadas = new PriorityQueue<>(
+        (a, b) -> Integer.compare(a.getPrioridad(), b.getPrioridad()));
+    private PilaReversiones pilaReversiones = new PilaReversiones();
+    private ColaNotificaciones colaNotificaciones = new ColaNotificaciones();
+    private GrafoTransacciones grafo = new GrafoTransacciones();
+    private ArbolFidelizacion arbol = new ArbolFidelizacion();
+    private SistemaRecompensas sistemaRecompensas = new SistemaRecompensas();
+    private DetectorComportamiento detector = new DetectorComportamiento();
+    private MotorAnalitica analitica = new MotorAnalitica();
 
     public void registrarUsuario(Usuario usuario) {
-        usuarios.put(usuario.getId(), usuario);
-        historiales.put(usuario.getId(), new HistorialTransacciones());
+        usuarioRepo.save(usuario);
         grafo.agregarVertice(usuario);
         arbol.insertar(usuario);
         System.out.println("Usuario registrado: " + usuario.getNombre());
     }
 
     public void registrarBilletera(Billetera billetera) {
-        billeteras.put(billetera.getId(), billetera);
+        billeteraRepo.save(billetera);
         System.out.println("Billetera registrada: " + billetera.getNombre());
     }
 
     public boolean procesarTransaccion(Transaccion txn) {
-        Billetera origen = billeteras.get(txn.getBilleteraOrigenId());
-        Billetera destino = billeteras.get(txn.getBilleteraDestinoId());
+        Billetera origen = txn.getBilleteraOrigenId() != null ?
+            billeteraRepo.findById(txn.getBilleteraOrigenId()).orElse(null) : null;
+        Billetera destino = txn.getBilleteraDestinoId() != null ?
+            billeteraRepo.findById(txn.getBilleteraDestinoId()).orElse(null) : null;
 
         if (txn.getTipo() == TipoTransaccion.RETIRO ||
             txn.getTipo() == TipoTransaccion.TRANSFERENCIA) {
             if (origen == null || !origen.validarSaldo(txn.getValor())) {
                 txn.setEstado(EstadoTransaccion.RECHAZADA);
+                String uid = origen != null ? origen.getUsuarioId() : null;
                 generarAlerta(new Alerta("A" + System.currentTimeMillis(),
                     TipoAlerta.OPERACION_RECHAZADA,
-                    "Saldo insuficiente para: " + txn.getId(),
-                    obtenerUsuarioDeBilletera(txn.getBilleteraOrigenId())));
+                    "Saldo insuficiente para: " + txn.getId(), uid));
                 return false;
             }
         }
 
         ejecutarMovimiento(txn, origen, destino);
 
-        String usuarioId = obtenerUsuarioDeBilletera(
-            txn.getBilleteraOrigenId() != null ?
-            txn.getBilleteraOrigenId() : txn.getBilleteraDestinoId());
+        String usuarioId = origen != null ? origen.getUsuarioId() :
+                           destino != null ? destino.getUsuarioId() : null;
+        txn.setUsuarioId(usuarioId);
 
-        Usuario usuario = usuarios.get(usuarioId);
+        Usuario usuario = usuarioId != null ?
+            usuarioRepo.findById(usuarioId).orElse(null) : null;
+
         if (usuario != null) {
-            HistorialTransacciones historial = historiales.get(usuarioId);
-            NivelRiesgo riesgo = detector.analizarTransaccion(txn, historial, usuario);
+            List<Transaccion> historialLista = transaccionRepo
+                .findByUsuarioIdOrderByFechaDesc(usuarioId);
+            HistorialTransacciones historial = new HistorialTransacciones();
+            for (Transaccion t : historialLista) historial.agregar(t);
 
+            NivelRiesgo riesgo = detector.analizarTransaccion(txn, historial, usuario);
             if (riesgo == NivelRiesgo.ALTO) {
                 generarAlerta(new Alerta("A" + System.currentTimeMillis(),
                     TipoAlerta.RIESGO_DETECTADO,
@@ -95,45 +100,43 @@ public class GestorOperaciones {
                     usuarioId, NivelRiesgo.ALTO));
             }
 
-            historial.agregar(txn);
             int puntos = sistemaRecompensas.calcularPuntos(txn);
             NivelUsuario nivelAnterior = usuario.getNivel();
             usuario.acumularPuntos(puntos);
+            usuarioRepo.save(usuario);
             arbol.actualizar(usuario);
 
             if (usuario.getNivel() != nivelAnterior) {
                 generarAlerta(new Alerta("A" + System.currentTimeMillis(),
                     TipoAlerta.ASCENSO_NIVEL,
-                    "Subiste a nivel: " + usuario.getNivel(),
-                    usuarioId));
+                    "Subiste a nivel: " + usuario.getNivel(), usuarioId));
             }
 
-            if (txn.getTipo() == TipoTransaccion.TRANSFERENCIA) {
-                String usuarioDestinoId = obtenerUsuarioDeBilletera(txn.getBilleteraDestinoId());
-                if (usuarioDestinoId != null) {
-                    grafo.agregarArista(usuarioId, usuarioDestinoId, txn.getValor());
-                }
+            if (txn.getTipo() == TipoTransaccion.TRANSFERENCIA && destino != null) {
+                String uidDestino = destino.getUsuarioId();
+                if (uidDestino != null) grafo.agregarArista(usuarioId, uidDestino, txn.getValor());
             }
 
             pilaReversiones.push(txn);
             verificarSaldoBajo(origen, usuarioId);
         }
 
+        transaccionRepo.save(txn);
         return true;
     }
 
     private void ejecutarMovimiento(Transaccion txn, Billetera origen, Billetera destino) {
         switch (txn.getTipo()) {
             case RECARGA:
-                if (destino != null) destino.recargar(txn.getValor());
+                if (destino != null) { destino.recargar(txn.getValor()); billeteraRepo.save(destino); }
                 break;
             case RETIRO:
-                if (origen != null) origen.retirar(txn.getValor());
+                if (origen != null) { origen.retirar(txn.getValor()); billeteraRepo.save(origen); }
                 break;
             case TRANSFERENCIA:
             case PAGO_PROGRAMADO:
-                if (origen != null) origen.retirar(txn.getValor());
-                if (destino != null) destino.recargar(txn.getValor());
+                if (origen != null) { origen.retirar(txn.getValor()); billeteraRepo.save(origen); }
+                if (destino != null) { destino.recargar(txn.getValor()); billeteraRepo.save(destino); }
                 break;
         }
         txn.setEstado(EstadoTransaccion.COMPLETADA);
@@ -145,30 +148,34 @@ public class GestorOperaciones {
             return false;
         }
         Transaccion txn = pilaReversiones.pop();
-        Billetera origen = billeteras.get(txn.getBilleteraOrigenId());
-        Billetera destino = billeteras.get(txn.getBilleteraDestinoId());
+        Billetera origen = txn.getBilleteraOrigenId() != null ?
+            billeteraRepo.findById(txn.getBilleteraOrigenId()).orElse(null) : null;
+        Billetera destino = txn.getBilleteraDestinoId() != null ?
+            billeteraRepo.findById(txn.getBilleteraDestinoId()).orElse(null) : null;
 
         switch (txn.getTipo()) {
             case RECARGA:
-                if (destino != null) destino.retirar(txn.getValor());
+                if (destino != null) { destino.retirar(txn.getValor()); billeteraRepo.save(destino); }
                 break;
             case RETIRO:
-                if (origen != null) origen.recargar(txn.getValor());
+                if (origen != null) { origen.recargar(txn.getValor()); billeteraRepo.save(origen); }
                 break;
             case TRANSFERENCIA:
             case PAGO_PROGRAMADO:
-                if (origen != null) origen.recargar(txn.getValor());
-                if (destino != null) destino.retirar(txn.getValor());
+                if (origen != null) { origen.recargar(txn.getValor()); billeteraRepo.save(origen); }
+                if (destino != null) { destino.retirar(txn.getValor()); billeteraRepo.save(destino); }
                 break;
         }
 
         txn.setEstado(EstadoTransaccion.REVERTIDA);
-        String usuarioId = obtenerUsuarioDeBilletera(
-            txn.getBilleteraOrigenId() != null ?
-            txn.getBilleteraOrigenId() : txn.getBilleteraDestinoId());
-        Usuario usuario = usuarios.get(usuarioId);
+        transaccionRepo.save(txn);
+
+        String usuarioId = txn.getUsuarioId();
+        Usuario usuario = usuarioId != null ?
+            usuarioRepo.findById(usuarioId).orElse(null) : null;
         if (usuario != null) {
             sistemaRecompensas.recalcularAlRevertir(usuario, txn);
+            usuarioRepo.save(usuario);
             arbol.actualizar(usuario);
             generarAlerta(new Alerta("A" + System.currentTimeMillis(),
                 TipoAlerta.TRANSACCION_REVERTIDA,
@@ -180,7 +187,6 @@ public class GestorOperaciones {
 
     public void programarTransaccion(TxnProgramada txn) {
         colaProgramadas.add(txn);
-        System.out.println("Transaccion programada: " + txn.getId());
     }
 
     public void ejecutarProgramadas() {
@@ -188,7 +194,6 @@ public class GestorOperaciones {
                colaProgramadas.peek().estaListaParaEjecutar()) {
             TxnProgramada txn = colaProgramadas.poll();
             procesarTransaccion(txn);
-            System.out.println("Ejecutada programada: " + txn.getId());
         }
     }
 
@@ -196,8 +201,7 @@ public class GestorOperaciones {
         if (billetera != null && billetera.getSaldo() < 50000) {
             generarAlerta(new Alerta("A" + System.currentTimeMillis(),
                 TipoAlerta.SALDO_BAJO,
-                "Saldo bajo en billetera: " + billetera.getNombre(),
-                usuarioId));
+                "Saldo bajo en billetera: " + billetera.getNombre(), usuarioId));
         }
     }
 
@@ -213,19 +217,23 @@ public class GestorOperaciones {
         }
     }
 
-    private String obtenerUsuarioDeBilletera(String billeteraId) {
-        if (billeteraId == null) return null;
-        Billetera b = billeteras.get(billeteraId);
-        return b != null ? b.getUsuarioId() : null;
+    public List<Usuario> getTodosUsuarios() { return usuarioRepo.findAll(); }
+    public Usuario getUsuario(String id) { return usuarioRepo.findById(id).orElse(null); }
+    public List<Billetera> getTodasBilleteras() { return billeteraRepo.findAll(); }
+    public Billetera getBilletera(String id) { return billeteraRepo.findById(id).orElse(null); }
+    public List<Transaccion> getHistorial(String usuarioId) {
+        return transaccionRepo.findByUsuarioIdOrderByFechaDesc(usuarioId);
     }
-
-    // Getters
-    public HashMap<String, Usuario> getUsuarios() { return usuarios; }
-    public HashMap<String, Billetera> getBilleteras() { return billeteras; }
-    public Map<String, HistorialTransacciones> getHistoriales() { return historiales; }
     public GrafoTransacciones getGrafo() { return grafo; }
     public ArbolFidelizacion getArbol() { return arbol; }
     public MotorAnalitica getAnalitica() { return analitica; }
     public SistemaRecompensas getSistemaRecompensas() { return sistemaRecompensas; }
     public ColaNotificaciones getColaNotificaciones() { return colaNotificaciones; }
+
+    public void eliminarUsuario(String id) {
+    usuarioRepo.deleteById(id);
+}
+public List<Billetera> getBilleterasDeUsuario(String usuarioId) {
+    return billeteraRepo.findByUsuarioId(usuarioId);
+}
 }

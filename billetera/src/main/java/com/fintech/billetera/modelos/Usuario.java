@@ -1,18 +1,29 @@
 package com.fintech.billetera.modelos;
 
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+@Entity
+@Table(name = "usuarios")
 public class Usuario {
+
+    @Id
     private String id;
     private String nombre;
     private String email;
     private String telefono;
     private Date fechaRegistro;
     private int puntosTotales;
+
+    @Enumerated(EnumType.STRING)
     private NivelUsuario nivel;
-    private List<Billetera> billeteras;
+
+    @Transient
+private List<Billetera> billeteras = new ArrayList<>();
+
+    public Usuario() {}
 
     public Usuario(String id, String nombre, String email, String telefono) {
         this.id = id;
@@ -26,6 +37,7 @@ public class Usuario {
     }
 
     public void agregarBilletera(Billetera billetera) {
+        if (this.billeteras == null) this.billeteras = new ArrayList<>();
         this.billeteras.add(billetera);
     }
 
@@ -40,18 +52,12 @@ public class Usuario {
     }
 
     public void actualizarNivel() {
-        if (puntosTotales <= 500) {
-            nivel = NivelUsuario.BRONCE;
-        } else if (puntosTotales <= 1000) {
-            nivel = NivelUsuario.PLATA;
-        } else if (puntosTotales <= 5000) {
-            nivel = NivelUsuario.ORO;
-        } else {
-            nivel = NivelUsuario.PLATINO;
-        }
+        if (puntosTotales <= 500) nivel = NivelUsuario.BRONCE;
+        else if (puntosTotales <= 1000) nivel = NivelUsuario.PLATA;
+        else if (puntosTotales <= 5000) nivel = NivelUsuario.ORO;
+        else nivel = NivelUsuario.PLATINO;
     }
 
-    // Getters y Setters
     public String getId() { return id; }
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }
@@ -61,12 +67,14 @@ public class Usuario {
     public void setTelefono(String telefono) { this.telefono = telefono; }
     public Date getFechaRegistro() { return fechaRegistro; }
     public int getPuntosTotales() { return puntosTotales; }
+    public void setPuntosTotales(int puntosTotales) { this.puntosTotales = puntosTotales; }
     public NivelUsuario getNivel() { return nivel; }
+    public void setNivel(NivelUsuario nivel) { this.nivel = nivel; }
     public List<Billetera> getBilleteras() { return billeteras; }
+    public void setBilleteras(List<Billetera> billeteras) { this.billeteras = billeteras; }
 
     @Override
     public String toString() {
-        return "Usuario{id='" + id + "', nombre='" + nombre + 
-               "', nivel=" + nivel + ", puntos=" + puntosTotales + "}";
+        return "Usuario{id='" + id + "', nombre='" + nombre + "', nivel=" + nivel + ", puntos=" + puntosTotales + "}";
     }
 }

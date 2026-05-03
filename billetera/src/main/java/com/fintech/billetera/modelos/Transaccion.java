@@ -1,17 +1,34 @@
 package com.fintech.billetera.modelos;
 
+import jakarta.persistence.*;
 import java.util.Date;
 
+@Entity
+@Table(name = "transacciones")
 public class Transaccion {
+
+    @Id
     private String id;
     private Date fecha;
+
+    @Enumerated(EnumType.STRING)
     private TipoTransaccion tipo;
+
     private double valor;
     private String billeteraOrigenId;
     private String billeteraDestinoId;
+
+    @Enumerated(EnumType.STRING)
     private EstadoTransaccion estado;
+
     private int puntosGenerados;
+
+    @Enumerated(EnumType.STRING)
     private NivelRiesgo nivelRiesgo;
+
+    private String usuarioId;
+
+    public Transaccion() {}
 
     public Transaccion(String id, TipoTransaccion tipo, double valor,
                        String billeteraOrigenId, String billeteraDestinoId) {
@@ -27,29 +44,19 @@ public class Transaccion {
     }
 
     public int calcularPuntos() {
+        if (tipo == null) return 0;
         int puntos = 0;
         switch (tipo) {
-            case RECARGA:
-                puntos = (int)(valor / 100);
-                break;
-            case RETIRO:
-                puntos = (int)(valor / 100) * 2;
-                break;
-            case TRANSFERENCIA:
-                puntos = (int)(valor / 100) * 3;
-                break;
-            case PAGO_PROGRAMADO:
-                puntos = (int)(valor / 100) * 3 + 10;
-                break;
+            case RECARGA: puntos = (int)(valor / 100); break;
+            case RETIRO: puntos = (int)(valor / 100) * 2; break;
+            case TRANSFERENCIA: puntos = (int)(valor / 100) * 3; break;
+            case PAGO_PROGRAMADO: puntos = (int)(valor / 100) * 3 + 10; break;
         }
         return puntos;
     }
 
-    public void marcarRiesgo(NivelRiesgo nivel) {
-        this.nivelRiesgo = nivel;
-    }
+    public void marcarRiesgo(NivelRiesgo nivel) { this.nivelRiesgo = nivel; }
 
-    // Getters y Setters
     public String getId() { return id; }
     public Date getFecha() { return fecha; }
     public TipoTransaccion getTipo() { return tipo; }
@@ -61,11 +68,11 @@ public class Transaccion {
     public int getPuntosGenerados() { return puntosGenerados; }
     public void setPuntosGenerados(int puntos) { this.puntosGenerados = puntos; }
     public NivelRiesgo getNivelRiesgo() { return nivelRiesgo; }
+    public String getUsuarioId() { return usuarioId; }
+    public void setUsuarioId(String usuarioId) { this.usuarioId = usuarioId; }
 
     @Override
     public String toString() {
-        return "Transaccion{id='" + id + "', tipo=" + tipo +
-               ", valor=" + valor + ", estado=" + estado +
-               ", puntos=" + puntosGenerados + ", riesgo=" + nivelRiesgo + "}";
+        return "Transaccion{id='" + id + "', tipo=" + tipo + ", valor=" + valor + ", estado=" + estado + "}";
     }
 }
