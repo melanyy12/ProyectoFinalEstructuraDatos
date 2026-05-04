@@ -12,6 +12,7 @@ import com.fintech.billetera.modelos.Billetera;
 import com.fintech.billetera.modelos.TipoBilletera;
 import com.fintech.billetera.modelos.TipoTransaccion;
 import com.fintech.billetera.modelos.Transaccion;
+import com.fintech.billetera.modelos.TxnProgramada;
 import com.fintech.billetera.modelos.Usuario;
 import com.fintech.billetera.servicios.GestorOperaciones;
 import com.fintech.billetera.modelos.Billetera;
@@ -190,5 +191,32 @@ public String modificarUsuario(@RequestParam String id,
         gestor.registrarUsuario(u);
     }
     return "redirect:/usuarios/" + id;
+}
+
+@PostMapping("/transaccion/programar")
+public String programarTransaccion(@RequestParam String usuarioId,
+                                    @RequestParam String origenId,
+                                    @RequestParam String destinoId,
+                                    @RequestParam double monto,
+                                    @RequestParam String fechaEjecucion) {
+    try {
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+        java.util.Date fecha = sdf.parse(fechaEjecucion);
+        TxnProgramada txn = new TxnProgramada(
+            "TP" + System.currentTimeMillis(),
+            TipoTransaccion.PAGO_PROGRAMADO,
+            monto, origenId, destinoId, fecha, "manual");
+        txn.setUsuarioId(usuarioId);
+        gestor.programarTransaccion(txn);
+    } catch (Exception e) {
+        System.out.println("Error al programar: " + e.getMessage());
+    }
+    return "redirect:/usuarios/" + usuarioId;
+}
+
+@PostMapping("/transaccion/ejecutarProgramadas")
+public String ejecutarProgramadas(@RequestParam String usuarioId) {
+    gestor.ejecutarProgramadas();
+    return "redirect:/usuarios/" + usuarioId;
 }
 }

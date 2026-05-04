@@ -196,6 +196,35 @@
             </div>
 
             <div class="section">
+
+                <h3>Programar Transacción</h3>
+                <form th:action="@{/transaccion/programar}" method="post">
+                    <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
+                    <div class="form-group">
+                        <label>Billetera Origen</label>
+                        <input type="text" name="origenId" placeholder="B001" required/>
+                    </div>
+                    <div class="form-group">
+                        <label>Billetera Destino</label>
+                        <input type="text" name="destinoId" placeholder="B002" required/>
+                    </div>
+                    <div class="form-group">
+                        <label>Monto</label>
+                        <input type="number" name="monto" placeholder="50000" required/>
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha de Ejecución</label>
+                        <input type="datetime-local" name="fechaEjecucion" required/>
+                    </div>
+                    <button type="submit" class="btn">📅 Programar</button>
+                </form>
+                <form th:action="@{/transaccion/ejecutarProgramadas}" method="post" style="margin-top:12px;">
+                    <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
+                    <button type="submit" class="btn" style="background:#a78bfa;color:#1e1b4b;">
+                         Ejecutar Programadas Pendientes
+                    </button>
+                </form>
+            </div>
                 <h3>Revertir última transacción</h3>
                 <form th:action="@{/transaccion/revertir}" method="post">
                     <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
