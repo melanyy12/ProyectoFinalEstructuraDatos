@@ -63,6 +63,18 @@
     </div>
 
     <div class="section">
+         <h2>Buscar Usuario</h2>
+        <form action="/usuario/buscar" method="get" style="display:flex;gap:12px;align-items:flex-end;">
+            <div class="form-group" style="flex:1;margin:0;">
+                <label>ID Usuario</label>
+                <input type="text" name="id" placeholder="U001" required/>
+            </div>
+            <button type="submit" class="btn" style="margin:0;">Buscar</button>
+        </form>
+        <p th:if="${errorBusqueda != null}"
+           style="color:#f87171;font-size:13px;margin-top:12px;"
+           th:text="${errorBusqueda}">Error</p>
+    </div>
         <h2>Registrar Usuario</h2>
         <form action="/usuario/registrar" method="post">
             <div class="form-grid">

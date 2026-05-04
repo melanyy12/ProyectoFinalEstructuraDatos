@@ -76,6 +76,35 @@
 
     <div class="grid2">
         <div class="section">
+            <h3>Modificar Datos</h3>
+        <form th:action="@{/usuario/modificar}" method="post">
+            <input type="hidden" name="id" th:value="${usuario.id}"/>
+            <div class="form-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" name="nombre" th:value="${usuario.nombre}" required/>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" th:value="${usuario.email}" required/>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="text" name="telefono" th:value="${usuario.telefono}" required/>
+                </div>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:16px;">
+                <button type="submit" class="btn" style="width:auto;">Guardar cambios</button>
+                <form th:action="@{/usuario/eliminar}" method="post" style="margin:0;">
+                    <input type="hidden" name="id" th:value="${usuario.id}"/>
+                    <button type="submit" class="btn-danger" style="width:auto;"
+                            onclick="return confirm('¿Seguro que deseas eliminar este usuario?')">
+                        Eliminar usuario
+                    </button>
+                </form>
+            </div>
+        </form>
+    </div>
             <h3>Mis Billeteras</h3>
             <div th:each="billetera : ${usuario.billeteras}">
                 <div class="billetera-card">

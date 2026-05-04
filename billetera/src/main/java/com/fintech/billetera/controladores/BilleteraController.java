@@ -163,4 +163,32 @@ model.addAttribute("transaccionesRiesgo", transaccionesRiesgo);
 
         return "analitica";
     }
+
+    @GetMapping("/usuario/buscar")
+public String buscarUsuario(@RequestParam String id, Model model) {
+    Usuario u = gestor.getUsuario(id);
+    if (u == null) {
+        model.addAttribute("usuarios", gestor.getTodosUsuarios());
+        model.addAttribute("totalUsuarios", gestor.getTodosUsuarios().size());
+        model.addAttribute("totalBilleteras", gestor.getTodasBilleteras().size());
+        model.addAttribute("errorBusqueda", "No se encontró ningún usuario con ID: " + id);
+        return "index";
+    }
+    return "redirect:/usuarios/" + u.getId();
+}
+
+@PostMapping("/usuario/modificar")
+public String modificarUsuario(@RequestParam String id,
+                                @RequestParam String nombre,
+                                @RequestParam String email,
+                                @RequestParam String telefono) {
+    Usuario u = gestor.getUsuario(id);
+    if (u != null) {
+        u.setNombre(nombre);
+        u.setEmail(email);
+        u.setTelefono(telefono);
+        gestor.registrarUsuario(u);
+    }
+    return "redirect:/usuarios/" + id;
+}
 }
