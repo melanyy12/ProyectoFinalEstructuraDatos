@@ -152,6 +152,15 @@ public class BilleteraController {
         model.addAttribute("usuarioMasActivo", masActivo);
         model.addAttribute("txnUsuarioActivo", maxTxn);
 
+        // Transacciones con riesgo
+List<Transaccion> transaccionesRiesgo = todasTxn.stream()
+    .filter(t -> t.getNivelRiesgo() != com.fintech.billetera.modelos.NivelRiesgo.BAJO)
+    .collect(java.util.stream.Collectors.toList());
+model.addAttribute("transaccionesRiesgo", transaccionesRiesgo);
+
+    // Historial de auditoria
+    model.addAttribute("auditorias", gestor.getDetector().getHistorialAuditoria());
+
         return "analitica";
     }
 }
