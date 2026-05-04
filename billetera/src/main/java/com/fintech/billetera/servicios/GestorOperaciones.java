@@ -236,4 +236,7 @@ public class GestorOperaciones {
 public List<Billetera> getBilleterasDeUsuario(String usuarioId) {
     return billeteraRepo.findByUsuarioId(usuarioId);
 }
+public List<Transaccion> getTodasTransacciones() {
+    return transaccionRepo.findAll();
+}
 }
