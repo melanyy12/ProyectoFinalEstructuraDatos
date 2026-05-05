@@ -201,6 +201,31 @@
 
             <div class="section">
 
+                <h3>Transferir a Otro Usuario</h3>
+                <form th:action="@{/transaccion/transferencia-externa}" method="post">
+                    <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
+                    <div class="form-group">
+                        <label>Mi Billetera Origen</label>
+                        <input type="text" name="origenId" placeholder="B001" required/>
+                    </div>
+                    <div class="form-group">
+                        <label>ID Usuario Destino</label>
+                        <input type="text" name="destinoUsuarioId" placeholder="U002" required/>
+                    </div>
+                    <div class="form-group">
+                        <label>Billetera Destino</label>
+                        <input type="text" name="destinoBilleteraId" placeholder="B003" required/>
+                    </div>
+                    <div class="form-group">
+                        <label>Monto</label>
+                        <input type="number" name="monto" placeholder="50000" required/>
+                    </div>
+                    <button type="submit" class="btn" style="background:#818cf8;color:#1e1b4b;">
+                         Transferir a otro usuario
+                    </button>
+                </form>
+            </div>
+
                 <h3>Programar Transacción</h3>
                 <form th:action="@{/transaccion/programar}" method="post">
                     <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>

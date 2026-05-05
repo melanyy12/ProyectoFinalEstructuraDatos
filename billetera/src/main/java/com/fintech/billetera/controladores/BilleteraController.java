@@ -282,4 +282,24 @@ public class BilleteraController {
         }
         return "redirect:/beneficios/" + usuarioId;
     }
+
+    @PostMapping("/transaccion/transferencia-externa")
+    public String transferenciaExterna(@RequestParam String usuarioId,
+            @RequestParam String origenId,
+            @RequestParam String destinoUsuarioId,
+            @RequestParam String destinoBilleteraId,
+            @RequestParam double monto) {
+        Usuario destinoUsuario = gestor.getUsuario(destinoUsuarioId);
+        if (destinoUsuario == null) {
+            return "redirect:/usuarios/" + usuarioId;
+        }
+        Billetera destino = gestor.getBilletera(destinoBilleteraId);
+        if (destino == null || !destino.getUsuarioId().equals(destinoUsuarioId)) {
+            return "redirect:/usuarios/" + usuarioId;
+        }
+        Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
+                TipoTransaccion.TRANSFERENCIA, monto, origenId, destinoBilleteraId);
+        gestor.procesarTransaccion(t);
+        return "redirect:/usuarios/" + usuarioId;
+    }
 }
