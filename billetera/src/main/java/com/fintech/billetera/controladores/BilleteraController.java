@@ -18,7 +18,10 @@ import com.fintech.billetera.modelos.TxnProgramada;
 import com.fintech.billetera.modelos.Usuario;
 import com.fintech.billetera.servicios.GestorOperaciones;
 import com.fintech.billetera.modelos.Billetera;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 public class BilleteraController {
@@ -163,6 +166,31 @@ public class BilleteraController {
 
         // Historial de auditoria
         model.addAttribute("auditorias", gestor.getDetector().getHistorialAuditoria());
+
+        // Billeteras más activas
+        List<Transaccion> todasTxnLista = todasTxn;
+        Map<String, Long> conteoActividad = todasTxnLista.stream()
+                .flatMap(t -> java.util.stream.Stream.of(t.getBilleteraOrigenId(), t.getBilleteraDestinoId()))
+                .filter(id -> id != null)
+                .collect(java.util.stream.Collectors.groupingBy(id -> id, java.util.stream.Collectors.counting()));
+
+        List<Map.Entry<String, Long>> billeterasActivas = new ArrayList<>(conteoActividad.entrySet());
+        billeterasActivas.sort((a, b) -> Long.compare(b.getValue(), a.getValue()));
+
+        List<Map<String, Object>> billeterasConInfo = new ArrayList<>();
+        for (Map.Entry<String, Long> entry : billeterasActivas) {
+            Billetera bil = gestor.getBilletera(entry.getKey());
+            if (bil != null) {
+                Map<String, Object> info = new java.util.HashMap<>();
+                info.put("id", bil.getId());
+                info.put("nombre", bil.getNombre());
+                info.put("tipo", bil.getTipo());
+                info.put("saldo", bil.getSaldo());
+                info.put("movimientos", entry.getValue());
+                billeterasConInfo.add(info);
+            }
+        }
+        model.addAttribute("billeterasActivas", billeterasConInfo);
 
         return "analitica";
     }
