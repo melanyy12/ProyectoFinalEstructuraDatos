@@ -47,7 +47,7 @@
 </head>
 <body>
 <nav class="navbar">
-    <h1>💳 FintechWallet</h1>
+    <h1> FintechWallet</h1>
     <div>
         <a href="/">Inicio</a>
         <a href="/analitica">Analítica</a>
@@ -71,6 +71,10 @@
                 <p style="font-size:12px;color:#94a3b8;">PUNTOS ACUMULADOS</p>
                 <p class="puntos-big" th:text="${usuario.puntosTotales}">0</p>
             </div>
+             <a th:href="@{/beneficios/{id}(id=${usuario.id})}"
+               class="btn-outline" style="margin-top:12px;display:inline-block;">
+                 Ver Beneficios
+            </a>
         </div>
     </div>
 
@@ -216,7 +220,7 @@
                         <label>Fecha de Ejecución</label>
                         <input type="datetime-local" name="fechaEjecucion" required/>
                     </div>
-                    <button type="submit" class="btn">📅 Programar</button>
+                    <button type="submit" class="btn"> Programar</button>
                 </form>
                 <form th:action="@{/transaccion/ejecutarProgramadas}" method="post" style="margin-top:12px;">
                     <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>

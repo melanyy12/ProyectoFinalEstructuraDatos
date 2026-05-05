@@ -8,7 +8,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.fintech.billetera.modelos.Alerta;
 import com.fintech.billetera.modelos.Billetera;
+import com.fintech.billetera.modelos.TipoAlerta;
 import com.fintech.billetera.modelos.TipoBilletera;
 import com.fintech.billetera.modelos.TipoTransaccion;
 import com.fintech.billetera.modelos.Transaccion;
@@ -154,69 +156,102 @@ public class BilleteraController {
         model.addAttribute("txnUsuarioActivo", maxTxn);
 
         // Transacciones con riesgo
-List<Transaccion> transaccionesRiesgo = todasTxn.stream()
-    .filter(t -> t.getNivelRiesgo() != com.fintech.billetera.modelos.NivelRiesgo.BAJO)
-    .collect(java.util.stream.Collectors.toList());
-model.addAttribute("transaccionesRiesgo", transaccionesRiesgo);
+        List<Transaccion> transaccionesRiesgo = todasTxn.stream()
+                .filter(t -> t.getNivelRiesgo() != com.fintech.billetera.modelos.NivelRiesgo.BAJO)
+                .collect(java.util.stream.Collectors.toList());
+        model.addAttribute("transaccionesRiesgo", transaccionesRiesgo);
 
-    // Historial de auditoria
-    model.addAttribute("auditorias", gestor.getDetector().getHistorialAuditoria());
+        // Historial de auditoria
+        model.addAttribute("auditorias", gestor.getDetector().getHistorialAuditoria());
 
         return "analitica";
     }
 
     @GetMapping("/usuario/buscar")
-public String buscarUsuario(@RequestParam String id, Model model) {
-    Usuario u = gestor.getUsuario(id);
-    if (u == null) {
-        model.addAttribute("usuarios", gestor.getTodosUsuarios());
-        model.addAttribute("totalUsuarios", gestor.getTodosUsuarios().size());
-        model.addAttribute("totalBilleteras", gestor.getTodasBilleteras().size());
-        model.addAttribute("errorBusqueda", "No se encontró ningún usuario con ID: " + id);
-        return "index";
+    public String buscarUsuario(@RequestParam String id, Model model) {
+        Usuario u = gestor.getUsuario(id);
+        if (u == null) {
+            model.addAttribute("usuarios", gestor.getTodosUsuarios());
+            model.addAttribute("totalUsuarios", gestor.getTodosUsuarios().size());
+            model.addAttribute("totalBilleteras", gestor.getTodasBilleteras().size());
+            model.addAttribute("errorBusqueda", "No se encontró ningún usuario con ID: " + id);
+            return "index";
+        }
+        return "redirect:/usuarios/" + u.getId();
     }
-    return "redirect:/usuarios/" + u.getId();
-}
 
-@PostMapping("/usuario/modificar")
-public String modificarUsuario(@RequestParam String id,
-                                @RequestParam String nombre,
-                                @RequestParam String email,
-                                @RequestParam String telefono) {
-    Usuario u = gestor.getUsuario(id);
-    if (u != null) {
-        u.setNombre(nombre);
-        u.setEmail(email);
-        u.setTelefono(telefono);
-        gestor.registrarUsuario(u);
+    @PostMapping("/usuario/modificar")
+    public String modificarUsuario(@RequestParam String id,
+            @RequestParam String nombre,
+            @RequestParam String email,
+            @RequestParam String telefono) {
+        Usuario u = gestor.getUsuario(id);
+        if (u != null) {
+            u.setNombre(nombre);
+            u.setEmail(email);
+            u.setTelefono(telefono);
+            gestor.registrarUsuario(u);
+        }
+        return "redirect:/usuarios/" + id;
     }
-    return "redirect:/usuarios/" + id;
-}
 
-@PostMapping("/transaccion/programar")
-public String programarTransaccion(@RequestParam String usuarioId,
-                                    @RequestParam String origenId,
-                                    @RequestParam String destinoId,
-                                    @RequestParam double monto,
-                                    @RequestParam String fechaEjecucion) {
-    try {
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
-        java.util.Date fecha = sdf.parse(fechaEjecucion);
-        TxnProgramada txn = new TxnProgramada(
-            "TP" + System.currentTimeMillis(),
-            TipoTransaccion.PAGO_PROGRAMADO,
-            monto, origenId, destinoId, fecha, "manual");
-        txn.setUsuarioId(usuarioId);
-        gestor.programarTransaccion(txn);
-    } catch (Exception e) {
-        System.out.println("Error al programar: " + e.getMessage());
+    @PostMapping("/transaccion/programar")
+    public String programarTransaccion(@RequestParam String usuarioId,
+            @RequestParam String origenId,
+            @RequestParam String destinoId,
+            @RequestParam double monto,
+            @RequestParam String fechaEjecucion) {
+        try {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+            java.util.Date fecha = sdf.parse(fechaEjecucion);
+            TxnProgramada txn = new TxnProgramada(
+                    "TP" + System.currentTimeMillis(),
+                    TipoTransaccion.PAGO_PROGRAMADO,
+                    monto, origenId, destinoId, fecha, "manual");
+            txn.setUsuarioId(usuarioId);
+            gestor.programarTransaccion(txn);
+        } catch (Exception e) {
+            System.out.println("Error al programar: " + e.getMessage());
+        }
+        return "redirect:/usuarios/" + usuarioId;
     }
-    return "redirect:/usuarios/" + usuarioId;
-}
 
-@PostMapping("/transaccion/ejecutarProgramadas")
-public String ejecutarProgramadas(@RequestParam String usuarioId) {
-    gestor.ejecutarProgramadas();
-    return "redirect:/usuarios/" + usuarioId;
-}
+    @PostMapping("/transaccion/ejecutarProgramadas")
+    public String ejecutarProgramadas(@RequestParam String usuarioId) {
+        gestor.ejecutarProgramadas();
+        return "redirect:/usuarios/" + usuarioId;
+    }
+
+    @GetMapping("/beneficios/{usuarioId}")
+    public String verBeneficios(@PathVariable String usuarioId, Model model) {
+        Usuario u = gestor.getUsuario(usuarioId);
+        if (u == null)
+            return "redirect:/";
+        List<Billetera> billeteras = gestor.getBilleterasDeUsuario(usuarioId);
+        u.setBilleteras(billeteras);
+        model.addAttribute("usuario", u);
+        model.addAttribute("beneficiosDisponibles",
+                gestor.getSistemaRecompensas().getBeneficiosDisponibles(u));
+        model.addAttribute("todosBeneficios",
+                gestor.getSistemaRecompensas().getBeneficiosPorNivel(u.getNivel()));
+        return "beneficios";
+    }
+
+    @PostMapping("/beneficios/canjear")
+    public String canjearBeneficio(@RequestParam String usuarioId,
+            @RequestParam String beneficioId) {
+        Usuario u = gestor.getUsuario(usuarioId);
+        if (u != null) {
+            boolean exito = gestor.getSistemaRecompensas().canjearBeneficio(u, beneficioId);
+            if (exito) {
+                gestor.registrarUsuario(u);
+                gestor.generarAlerta(new Alerta(
+                        "A" + System.currentTimeMillis(),
+                        TipoAlerta.CANJE_BENEFICIO,
+                        "Beneficio canjeado exitosamente",
+                        usuarioId));
+            }
+        }
+        return "redirect:/beneficios/" + usuarioId;
+    }
 }
