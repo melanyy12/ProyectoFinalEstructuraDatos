@@ -192,6 +192,21 @@ public class BilleteraController {
         }
         model.addAttribute("billeterasActivas", billeterasConInfo);
 
+        // Tabla hash - acceso rapido por ID
+        Map<String, String> tablaHashUsuarios = new java.util.LinkedHashMap<>();
+        for (Usuario u : todosUsuarios) {
+            tablaHashUsuarios.put(u.getId(),
+                    u.getNombre() + " | " + u.getNivel() + " | " + u.getPuntosTotales() + " pts");
+        }
+
+        Map<String, String> tablaHashBilleteras = new java.util.LinkedHashMap<>();
+        for (Billetera b : gestor.getTodasBilleteras()) {
+            tablaHashBilleteras.put(b.getId(), b.getNombre() + " | " + b.getTipo() + " | $" + b.getSaldo());
+        }
+
+        model.addAttribute("tablaHashUsuarios", tablaHashUsuarios);
+        model.addAttribute("tablaHashBilleteras", tablaHashBilleteras);
+
         return "analitica";
     }
 

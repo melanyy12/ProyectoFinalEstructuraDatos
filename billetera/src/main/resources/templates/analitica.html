@@ -267,6 +267,51 @@
         </p>
     </div>
 
+    <!-- Tabla Hash -->
+    <div class="section">
+        <h2>🗂️ Tabla Hash - Acceso Rápido por ID</h2>
+        <div class="grid2">
+            <div>
+                <h3 style="font-size:14px;color:#94a3b8;margin-bottom:14px;text-transform:uppercase;">
+                    Usuarios (HashMap)
+                </h3>
+                <div th:each="entrada : ${tablaHashUsuarios}">
+                    <div style="display:flex;gap:12px;align-items:center;padding:10px;
+                                background:#0f172a;border-radius:8px;margin-bottom:8px;
+                                border:1px solid #334155;">
+                        <div style="background:#1e3a5f;color:#93c5fd;padding:4px 10px;
+                                    border-radius:6px;font-size:12px;font-weight:700;
+                                    flex-shrink:0;" th:text="${entrada.key}">ID</div>
+                        <div style="font-size:13px;color:#cbd5e1;" 
+                             th:text="${entrada.value}">info</div>
+                    </div>
+                </div>
+                <p th:if="${#maps.size(tablaHashUsuarios) == 0}" class="empty">
+                    Sin usuarios registrados.
+                </p>
+            </div>
+            <div>
+                <h3 style="font-size:14px;color:#94a3b8;margin-bottom:14px;text-transform:uppercase;">
+                    Billeteras (HashMap)
+                </h3>
+                <div th:each="entrada : ${tablaHashBilleteras}">
+                    <div style="display:flex;gap:12px;align-items:center;padding:10px;
+                                background:#0f172a;border-radius:8px;margin-bottom:8px;
+                                border:1px solid #334155;">
+                        <div style="background:#3b2100;color:#fbbf24;padding:4px 10px;
+                                    border-radius:6px;font-size:12px;font-weight:700;
+                                    flex-shrink:0;" th:text="${entrada.key}">ID</div>
+                        <div style="font-size:13px;color:#cbd5e1;" 
+                             th:text="${entrada.value}">info</div>
+                    </div>
+                </div>
+                <p th:if="${#maps.size(tablaHashBilleteras) == 0}" class="empty">
+                    Sin billeteras registradas.
+                </p>
+            </div>
+        </div>
+    </div>
+
     <!-- Transacciones con riesgo -->
     <div class="section">
         <h2> Transacciones con Riesgo Detectado</h2>
