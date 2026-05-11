@@ -114,12 +114,36 @@ public class BilleteraController {
     }
 
     @GetMapping("/analitica")
-    public String analitica(Model model) {
+    public String analitica(Model model,
+            @RequestParam(required = false) String fechaInicio,
+            @RequestParam(required = false) String fechaFin) {
         List<Usuario> todosUsuarios = gestor.getTodosUsuarios();
         todosUsuarios.forEach(u -> gestor.getGrafo().agregarVertice(u));
         todosUsuarios.forEach(u -> gestor.getArbol().insertar(u));
 
         List<Transaccion> todasTxn = gestor.getTodasTransacciones();
+
+        // Filtro por rango de fechas
+        List<Transaccion> txnFiltradas = todasTxn;
+        String fechaInicioVal = fechaInicio;
+        String fechaFinVal = fechaFin;
+
+        if (fechaInicio != null && !fechaInicio.isEmpty() &&
+                fechaFin != null && !fechaFin.isEmpty()) {
+            try {
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+                java.util.Date inicio = sdf.parse(fechaInicio);
+                java.util.Date fin = sdf.parse(fechaFin);
+                fin = new java.util.Date(fin.getTime() + 86400000 - 1);
+                final java.util.Date inicioFinal = inicio;
+                final java.util.Date finFinal = fin;
+                txnFiltradas = todasTxn.stream()
+                        .filter(t -> !t.getFecha().before(inicioFinal) && !t.getFecha().after(finFinal))
+                        .collect(java.util.stream.Collectors.toList());
+            } catch (Exception e) {
+                System.out.println("Error parsing fechas: " + e.getMessage());
+            }
+        }
 
         // Top usuarios por puntos (BST)
         model.addAttribute("topUsuarios", gestor.getArbol().getTopN(5));
@@ -129,47 +153,39 @@ public class BilleteraController {
         model.addAttribute("vertices", todosUsuarios.size());
         model.addAttribute("aristas", gestor.getGrafo().getTotalAristas());
 
-        // Total transacciones y monto
-        model.addAttribute("totalTransacciones", todasTxn.size());
-        double montoTotal = todasTxn.stream().mapToDouble(Transaccion::getValor).sum();
+        // Total transacciones y monto (filtrados)
+        model.addAttribute("totalTransacciones", txnFiltradas.size());
+        double montoTotal = txnFiltradas.stream().mapToDouble(Transaccion::getValor).sum();
         model.addAttribute("montoTotal", montoTotal);
 
-        // Frecuencia por tipo
-        long recargas = todasTxn.stream().filter(t -> t.getTipo() == TipoTransaccion.RECARGA).count();
-        long retiros = todasTxn.stream().filter(t -> t.getTipo() == TipoTransaccion.RETIRO).count();
-        long transferencias = todasTxn.stream().filter(t -> t.getTipo() == TipoTransaccion.TRANSFERENCIA).count();
+        // Frecuencia por tipo (filtrados)
+        long recargas = txnFiltradas.stream().filter(t -> t.getTipo() == TipoTransaccion.RECARGA).count();
+        long retiros = txnFiltradas.stream().filter(t -> t.getTipo() == TipoTransaccion.RETIRO).count();
+        long transferencias = txnFiltradas.stream().filter(t -> t.getTipo() == TipoTransaccion.TRANSFERENCIA).count();
         model.addAttribute("recargas", recargas);
         model.addAttribute("retiros", retiros);
         model.addAttribute("transferencias", transferencias);
 
-        // Top 5 transacciones por valor
-        model.addAttribute("topTransacciones", gestor.getAnalitica().topTransaccionesPorValor(todasTxn, 5));
+        // Top 5 transacciones por valor (filtrados)
+        model.addAttribute("topTransacciones", gestor.getAnalitica().topTransaccionesPorValor(txnFiltradas, 5));
 
-        // Usuario más activo
+        // Usuario más activo (filtrado)
         Usuario masActivo = null;
         int maxTxn = 0;
         for (Usuario u : todosUsuarios) {
-            int cantidad = gestor.getHistorial(u.getId()).size();
+            final String uid = u.getId();
+            long cantidad = txnFiltradas.stream()
+                    .filter(t -> uid.equals(t.getUsuarioId())).count();
             if (cantidad > maxTxn) {
-                maxTxn = cantidad;
+                maxTxn = (int) cantidad;
                 masActivo = u;
             }
         }
         model.addAttribute("usuarioMasActivo", masActivo);
         model.addAttribute("txnUsuarioActivo", maxTxn);
 
-        // Transacciones con riesgo
-        List<Transaccion> transaccionesRiesgo = todasTxn.stream()
-                .filter(t -> t.getNivelRiesgo() != com.fintech.billetera.modelos.NivelRiesgo.BAJO)
-                .collect(java.util.stream.Collectors.toList());
-        model.addAttribute("transaccionesRiesgo", transaccionesRiesgo);
-
-        // Historial de auditoria
-        model.addAttribute("auditorias", gestor.getDetector().getHistorialAuditoria());
-
-        // Billeteras más activas
-        List<Transaccion> todasTxnLista = todasTxn;
-        Map<String, Long> conteoActividad = todasTxnLista.stream()
+        // Billeteras más activas (filtradas)
+        Map<String, Long> conteoActividad = txnFiltradas.stream()
                 .flatMap(t -> java.util.stream.Stream.of(t.getBilleteraOrigenId(), t.getBilleteraDestinoId()))
                 .filter(id -> id != null)
                 .collect(java.util.stream.Collectors.groupingBy(id -> id, java.util.stream.Collectors.counting()));
@@ -192,20 +208,29 @@ public class BilleteraController {
         }
         model.addAttribute("billeterasActivas", billeterasConInfo);
 
-        // Tabla hash - acceso rapido por ID
+        // Tabla hash
         Map<String, String> tablaHashUsuarios = new java.util.LinkedHashMap<>();
         for (Usuario u : todosUsuarios) {
             tablaHashUsuarios.put(u.getId(),
                     u.getNombre() + " | " + u.getNivel() + " | " + u.getPuntosTotales() + " pts");
         }
-
         Map<String, String> tablaHashBilleteras = new java.util.LinkedHashMap<>();
         for (Billetera b : gestor.getTodasBilleteras()) {
             tablaHashBilleteras.put(b.getId(), b.getNombre() + " | " + b.getTipo() + " | $" + b.getSaldo());
         }
-
         model.addAttribute("tablaHashUsuarios", tablaHashUsuarios);
         model.addAttribute("tablaHashBilleteras", tablaHashBilleteras);
+
+        // Transacciones con riesgo
+        List<Transaccion> transaccionesRiesgo = todasTxn.stream()
+                .filter(t -> t.getNivelRiesgo() != com.fintech.billetera.modelos.NivelRiesgo.BAJO)
+                .collect(java.util.stream.Collectors.toList());
+        model.addAttribute("transaccionesRiesgo", transaccionesRiesgo);
+        model.addAttribute("auditorias", gestor.getDetector().getHistorialAuditoria());
+
+        // Fechas para mantener el filtro en el formulario
+        model.addAttribute("fechaInicio", fechaInicioVal);
+        model.addAttribute("fechaFin", fechaFinVal);
 
         return "analitica";
     }
