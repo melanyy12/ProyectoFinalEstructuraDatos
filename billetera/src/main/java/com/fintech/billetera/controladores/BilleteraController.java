@@ -1,5 +1,9 @@
 package com.fintech.billetera.controladores;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,11 +21,6 @@ import com.fintech.billetera.modelos.Transaccion;
 import com.fintech.billetera.modelos.TxnProgramada;
 import com.fintech.billetera.modelos.Usuario;
 import com.fintech.billetera.servicios.GestorOperaciones;
-import com.fintech.billetera.modelos.Billetera;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 @Controller
 public class BilleteraController {
@@ -231,6 +230,25 @@ public class BilleteraController {
         // Fechas para mantener el filtro en el formulario
         model.addAttribute("fechaInicio", fechaInicioVal);
         model.addAttribute("fechaFin", fechaFinVal);
+
+        //Rutas frecuentes del grafo
+List<Map<String, Object>> rutasFrecuentes = new ArrayList<>();
+for (Usuario u : todosUsuarios) {
+    List<com.fintech.billetera.estructuras.AristaGrafo> rutas = 
+        gestor.getGrafo().getRutasFrecuentes(u.getId());
+    for (com.fintech.billetera.estructuras.AristaGrafo arista : rutas) {
+        Map<String, Object> ruta = new java.util.HashMap<>();
+        Usuario destino = gestor.getUsuario(arista.getDestinoId());
+        ruta.put("origen", u.getNombre());
+        ruta.put("destino", destino != null ? destino.getNombre() : arista.getDestinoId());
+        ruta.put("frecuencia", arista.getFrecuencia());
+        ruta.put("montoAcumulado", arista.getMontoAcumulado());
+        rutasFrecuentes.add(ruta);
+    }
+}
+rutasFrecuentes.sort((a, b) -> Integer.compare(
+    (int) b.get("frecuencia"), (int) a.get("frecuencia")));
+model.addAttribute("rutasFrecuentes", rutasFrecuentes);
 
         return "analitica";
     }
