@@ -303,6 +303,42 @@
         </p>
     </div>
 
+    <!-- Rutas frecuentes del grafo -->
+    <div class="section">
+        <h2>🔀 Rutas Frecuentes en el Grafo de Transferencias</h2>
+        <div th:if="${not #lists.isEmpty(rutasFrecuentes)}">
+            <div th:each="ruta, stat : ${rutasFrecuentes}">
+                <div style="display:flex;align-items:center;justify-content:space-between;
+                            padding:14px;background:#0f172a;border-radius:10px;
+                            margin-bottom:10px;border:1px solid #334155;">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <div class="rank-num" th:text="${stat.index + 1}">1</div>
+                        <div>
+                            <div style="font-size:14px;font-weight:600;">
+                                <span th:text="${ruta.origen}">Origen</span>
+                                <span style="color:#38bdf8;margin:0 8px;">→</span>
+                                <span th:text="${ruta.destino}">Destino</span>
+                            </div>
+                            <div style="font-size:12px;color:#64748b;margin-top:3px;">
+                                Transferencias realizadas
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:18px;font-weight:700;color:#38bdf8;"
+                             th:text="${ruta.frecuencia} + ' veces'">0 veces</div>
+                        <div style="font-size:13px;color:#4ade80;"
+                             th:text="'$' + ${#numbers.formatDecimal(ruta.montoAcumulado, 0, 'COMMA', 0, 'POINT')}">$0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p th:if="${#lists.isEmpty(rutasFrecuentes)}" class="empty">
+            No hay transferencias entre usuarios registradas aún.
+            Las rutas aparecen cuando se realizan transferencias entre distintos usuarios.
+        </p>
+    </div>
+
     <!-- Tabla Hash -->
     <div class="section">
         <h2>🗂️ Tabla Hash - Acceso Rápido por ID</h2>
