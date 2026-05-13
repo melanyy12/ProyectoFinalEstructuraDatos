@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.fintech.billetera.estructuras.ArbolFidelizacion;
+import com.fintech.billetera.estructuras.ColaNotificaciones;
+import com.fintech.billetera.estructuras.PilaReversiones;
 import com.fintech.billetera.modelos.Alerta;
 import com.fintech.billetera.modelos.Billetera;
 import com.fintech.billetera.modelos.TipoAlerta;
@@ -360,4 +363,64 @@ model.addAttribute("rutasFrecuentes", rutasFrecuentes);
         gestor.procesarTransaccion(t);
         return "redirect:/usuarios/" + usuarioId;
     }
+    @GetMapping("/rendimiento")
+public String rendimiento(Model model) {
+    List<Usuario> usuarios = gestor.getTodosUsuarios();
+    List<Transaccion> transacciones = gestor.getTodasTransacciones();
+
+    // Comparar busqueda en Lista vs HashMap
+    long inicioLista = System.nanoTime();
+    for (Usuario u : usuarios) {
+        for (Usuario u2 : usuarios) {
+            if (u2.getId().equals(u.getId())) break;
+        }
+    }
+    long tiempoLista = System.nanoTime() - inicioLista;
+
+    long inicioHash = System.nanoTime();
+    Map<String, Usuario> mapaUsuarios = new java.util.HashMap<>();
+    for (Usuario u : usuarios) mapaUsuarios.put(u.getId(), u);
+    for (Usuario u : usuarios) mapaUsuarios.get(u.getId());
+    long tiempoHash = System.nanoTime() - inicioHash;
+
+    // Comparar insercion en Lista vs Arbol BST
+    long inicioBST = System.nanoTime();
+    ArbolFidelizacion arbolTemp = new ArbolFidelizacion();
+    for (Usuario u : usuarios) arbolTemp.insertar(u);
+    arbolTemp.getOrdenadoPorPuntos();
+    long tiempoBST = System.nanoTime() - inicioBST;
+
+    long inicioListaSort = System.nanoTime();
+    List<Usuario> listaTemp = new ArrayList<>(usuarios);
+    listaTemp.sort((a, b) -> Integer.compare(a.getPuntosTotales(), b.getPuntosTotales()));
+    long tiempoListaSort = System.nanoTime() - inicioListaSort;
+
+    // Comparar Pila vs Cola
+    long inicioPila = System.nanoTime();
+    PilaReversiones pilaTemp = new PilaReversiones();
+    for (Transaccion t : transacciones) pilaTemp.push(t);
+    while (!pilaTemp.estaVacia()) pilaTemp.pop();
+    long tiempoPila = System.nanoTime() - inicioPila;
+
+    long inicioCola = System.nanoTime();
+    ColaNotificaciones colaTemp = new ColaNotificaciones();
+    for (Transaccion t : transacciones) {
+        colaTemp.encolar(new com.fintech.billetera.modelos.Alerta(
+            t.getId(), com.fintech.billetera.modelos.TipoAlerta.SALDO_BAJO, 
+            "test", "u1"));
+    }
+    while (!colaTemp.estaVacia()) colaTemp.despachar();
+    long tiempoCola = System.nanoTime() - inicioCola;
+
+    model.addAttribute("tiempoLista", tiempoLista);
+    model.addAttribute("tiempoHash", tiempoHash);
+    model.addAttribute("tiempoBST", tiempoBST);
+    model.addAttribute("tiempoListaSort", tiempoListaSort);
+    model.addAttribute("tiempoPila", tiempoPila);
+    model.addAttribute("tiempoCola", tiempoCola);
+    model.addAttribute("totalUsuarios", usuarios.size());
+    model.addAttribute("totalTransacciones", transacciones.size());
+
+    return "rendimiento";
+}
 }
