@@ -234,24 +234,58 @@ public class BilleteraController {
         model.addAttribute("fechaInicio", fechaInicioVal);
         model.addAttribute("fechaFin", fechaFinVal);
 
-        //Rutas frecuentes del grafo
-List<Map<String, Object>> rutasFrecuentes = new ArrayList<>();
-for (Usuario u : todosUsuarios) {
-    List<com.fintech.billetera.estructuras.AristaGrafo> rutas = 
-        gestor.getGrafo().getRutasFrecuentes(u.getId());
-    for (com.fintech.billetera.estructuras.AristaGrafo arista : rutas) {
-        Map<String, Object> ruta = new java.util.HashMap<>();
-        Usuario destino = gestor.getUsuario(arista.getDestinoId());
-        ruta.put("origen", u.getNombre());
-        ruta.put("destino", destino != null ? destino.getNombre() : arista.getDestinoId());
-        ruta.put("frecuencia", arista.getFrecuencia());
-        ruta.put("montoAcumulado", arista.getMontoAcumulado());
-        rutasFrecuentes.add(ruta);
-    }
-}
-rutasFrecuentes.sort((a, b) -> Integer.compare(
-    (int) b.get("frecuencia"), (int) a.get("frecuencia")));
-model.addAttribute("rutasFrecuentes", rutasFrecuentes);
+        // Rutas frecuentes del grafo
+        List<Map<String, Object>> rutasFrecuentes = new ArrayList<>();
+        for (Usuario u : todosUsuarios) {
+            List<com.fintech.billetera.estructuras.AristaGrafo> rutas = gestor.getGrafo().getRutasFrecuentes(u.getId());
+            for (com.fintech.billetera.estructuras.AristaGrafo arista : rutas) {
+                Map<String, Object> ruta = new java.util.HashMap<>();
+                Usuario destino = gestor.getUsuario(arista.getDestinoId());
+                ruta.put("origen", u.getNombre());
+                ruta.put("destino", destino != null ? destino.getNombre() : arista.getDestinoId());
+                ruta.put("frecuencia", arista.getFrecuencia());
+                ruta.put("montoAcumulado", arista.getMontoAcumulado());
+                rutasFrecuentes.add(ruta);
+            }
+        }
+        rutasFrecuentes.sort((a, b) -> Integer.compare(
+                (int) b.get("frecuencia"), (int) a.get("frecuencia")));
+        model.addAttribute("rutasFrecuentes", rutasFrecuentes);
+
+        // Datos para el grafo visual
+        List<Map<String, Object>> nodosGrafo = new ArrayList<>();
+        List<Map<String, Object>> aristasGrafo = new ArrayList<>();
+
+        for (Usuario u : todosUsuarios) {
+            Map<String, Object> nodo = new java.util.HashMap<>();
+            nodo.put("id", u.getId());
+            nodo.put("label", u.getNombre());
+            nodo.put("nivel", u.getNivel().name());
+            nodo.put("puntos", u.getPuntosTotales());
+            nodosGrafo.add(nodo);
+        }
+
+        for (Map.Entry<String, List<com.fintech.billetera.estructuras.AristaGrafo>> entry : gestor.getGrafo()
+                .getListaAdyacencia().entrySet()) {
+            for (com.fintech.billetera.estructuras.AristaGrafo arista : entry.getValue()) {
+                Map<String, Object> a = new java.util.HashMap<>();
+                a.put("from", arista.getOrigenId());
+                a.put("to", arista.getDestinoId());
+                a.put("monto", arista.getMontoAcumulado());
+                a.put("frecuencia", arista.getFrecuencia());
+                aristasGrafo.add(a);
+            }
+        }
+
+        // Convertir a JSON para el HTML
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        try {
+            model.addAttribute("nodosGrafoJson", mapper.writeValueAsString(nodosGrafo));
+            model.addAttribute("aristasGrafoJson", mapper.writeValueAsString(aristasGrafo));
+        } catch (Exception e) {
+            model.addAttribute("nodosGrafoJson", "[]");
+            model.addAttribute("aristasGrafoJson", "[]");
+        }
 
         return "analitica";
     }
@@ -363,64 +397,72 @@ model.addAttribute("rutasFrecuentes", rutasFrecuentes);
         gestor.procesarTransaccion(t);
         return "redirect:/usuarios/" + usuarioId;
     }
+
     @GetMapping("/rendimiento")
-public String rendimiento(Model model) {
-    List<Usuario> usuarios = gestor.getTodosUsuarios();
-    List<Transaccion> transacciones = gestor.getTodasTransacciones();
+    public String rendimiento(Model model) {
+        List<Usuario> usuarios = gestor.getTodosUsuarios();
+        List<Transaccion> transacciones = gestor.getTodasTransacciones();
 
-    // Comparar busqueda en Lista vs HashMap
-    long inicioLista = System.nanoTime();
-    for (Usuario u : usuarios) {
-        for (Usuario u2 : usuarios) {
-            if (u2.getId().equals(u.getId())) break;
+        // Comparar busqueda en Lista vs HashMap
+        long inicioLista = System.nanoTime();
+        for (Usuario u : usuarios) {
+            for (Usuario u2 : usuarios) {
+                if (u2.getId().equals(u.getId()))
+                    break;
+            }
         }
+        long tiempoLista = System.nanoTime() - inicioLista;
+
+        long inicioHash = System.nanoTime();
+        Map<String, Usuario> mapaUsuarios = new java.util.HashMap<>();
+        for (Usuario u : usuarios)
+            mapaUsuarios.put(u.getId(), u);
+        for (Usuario u : usuarios)
+            mapaUsuarios.get(u.getId());
+        long tiempoHash = System.nanoTime() - inicioHash;
+
+        // Comparar insercion en Lista vs Arbol BST
+        long inicioBST = System.nanoTime();
+        ArbolFidelizacion arbolTemp = new ArbolFidelizacion();
+        for (Usuario u : usuarios)
+            arbolTemp.insertar(u);
+        arbolTemp.getOrdenadoPorPuntos();
+        long tiempoBST = System.nanoTime() - inicioBST;
+
+        long inicioListaSort = System.nanoTime();
+        List<Usuario> listaTemp = new ArrayList<>(usuarios);
+        listaTemp.sort((a, b) -> Integer.compare(a.getPuntosTotales(), b.getPuntosTotales()));
+        long tiempoListaSort = System.nanoTime() - inicioListaSort;
+
+        // Comparar Pila vs Cola
+        long inicioPila = System.nanoTime();
+        PilaReversiones pilaTemp = new PilaReversiones();
+        for (Transaccion t : transacciones)
+            pilaTemp.push(t);
+        while (!pilaTemp.estaVacia())
+            pilaTemp.pop();
+        long tiempoPila = System.nanoTime() - inicioPila;
+
+        long inicioCola = System.nanoTime();
+        ColaNotificaciones colaTemp = new ColaNotificaciones();
+        for (Transaccion t : transacciones) {
+            colaTemp.encolar(new com.fintech.billetera.modelos.Alerta(
+                    t.getId(), com.fintech.billetera.modelos.TipoAlerta.SALDO_BAJO,
+                    "test", "u1"));
+        }
+        while (!colaTemp.estaVacia())
+            colaTemp.despachar();
+        long tiempoCola = System.nanoTime() - inicioCola;
+
+        model.addAttribute("tiempoLista", tiempoLista);
+        model.addAttribute("tiempoHash", tiempoHash);
+        model.addAttribute("tiempoBST", tiempoBST);
+        model.addAttribute("tiempoListaSort", tiempoListaSort);
+        model.addAttribute("tiempoPila", tiempoPila);
+        model.addAttribute("tiempoCola", tiempoCola);
+        model.addAttribute("totalUsuarios", usuarios.size());
+        model.addAttribute("totalTransacciones", transacciones.size());
+
+        return "rendimiento";
     }
-    long tiempoLista = System.nanoTime() - inicioLista;
-
-    long inicioHash = System.nanoTime();
-    Map<String, Usuario> mapaUsuarios = new java.util.HashMap<>();
-    for (Usuario u : usuarios) mapaUsuarios.put(u.getId(), u);
-    for (Usuario u : usuarios) mapaUsuarios.get(u.getId());
-    long tiempoHash = System.nanoTime() - inicioHash;
-
-    // Comparar insercion en Lista vs Arbol BST
-    long inicioBST = System.nanoTime();
-    ArbolFidelizacion arbolTemp = new ArbolFidelizacion();
-    for (Usuario u : usuarios) arbolTemp.insertar(u);
-    arbolTemp.getOrdenadoPorPuntos();
-    long tiempoBST = System.nanoTime() - inicioBST;
-
-    long inicioListaSort = System.nanoTime();
-    List<Usuario> listaTemp = new ArrayList<>(usuarios);
-    listaTemp.sort((a, b) -> Integer.compare(a.getPuntosTotales(), b.getPuntosTotales()));
-    long tiempoListaSort = System.nanoTime() - inicioListaSort;
-
-    // Comparar Pila vs Cola
-    long inicioPila = System.nanoTime();
-    PilaReversiones pilaTemp = new PilaReversiones();
-    for (Transaccion t : transacciones) pilaTemp.push(t);
-    while (!pilaTemp.estaVacia()) pilaTemp.pop();
-    long tiempoPila = System.nanoTime() - inicioPila;
-
-    long inicioCola = System.nanoTime();
-    ColaNotificaciones colaTemp = new ColaNotificaciones();
-    for (Transaccion t : transacciones) {
-        colaTemp.encolar(new com.fintech.billetera.modelos.Alerta(
-            t.getId(), com.fintech.billetera.modelos.TipoAlerta.SALDO_BAJO, 
-            "test", "u1"));
-    }
-    while (!colaTemp.estaVacia()) colaTemp.despachar();
-    long tiempoCola = System.nanoTime() - inicioCola;
-
-    model.addAttribute("tiempoLista", tiempoLista);
-    model.addAttribute("tiempoHash", tiempoHash);
-    model.addAttribute("tiempoBST", tiempoBST);
-    model.addAttribute("tiempoListaSort", tiempoListaSort);
-    model.addAttribute("tiempoPila", tiempoPila);
-    model.addAttribute("tiempoCola", tiempoCola);
-    model.addAttribute("totalUsuarios", usuarios.size());
-    model.addAttribute("totalTransacciones", transacciones.size());
-
-    return "rendimiento";
-}
 }
