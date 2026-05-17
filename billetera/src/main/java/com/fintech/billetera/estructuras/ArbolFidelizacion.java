@@ -1,9 +1,7 @@
 package com.fintech.billetera.estructuras;
 
-import com.fintech.billetera.modelos.Usuario;
 import com.fintech.billetera.modelos.NivelUsuario;
-import java.util.ArrayList;
-import java.util.List;
+import com.fintech.billetera.modelos.Usuario;
 
 public class ArbolFidelizacion {
     private NodoArbol raiz;
@@ -51,45 +49,49 @@ public class ArbolFidelizacion {
         return nodo;
     }
 
-    public List<Usuario> getOrdenadoPorPuntos() {
-        List<Usuario> resultado = new ArrayList<>();
+    public ListaSimple<Usuario> getOrdenadoPorPuntos() {
+        ListaSimple<Usuario> resultado = new ListaSimple<>();
         inorden(raiz, resultado);
         return resultado;
     }
 
-    private void inorden(NodoArbol nodo, List<Usuario> lista) {
+    private void inorden(NodoArbol nodo, ListaSimple<Usuario> lista) {
         if (nodo == null) return;
         inorden(nodo.izquierdo, lista);
-        lista.add(nodo.usuario);
+        lista.agregar(nodo.usuario);
         inorden(nodo.derecho, lista);
     }
 
-    public List<Usuario> getTopN(int n) {
-        List<Usuario> todos = getOrdenadoPorPuntos();
-        int desde = Math.max(0, todos.size() - n);
-        List<Usuario> top = new ArrayList<>(todos.subList(desde, todos.size()));
-        java.util.Collections.reverse(top);
+    public ListaSimple<Usuario> getTopN(int n) {
+        ListaSimple<Usuario> todos = getOrdenadoPorPuntos();
+        ListaSimple<Usuario> top = new ListaSimple<>();
+        int desde = Math.max(0, todos.getTamanio() - n);
+        for (int i = todos.getTamanio() - 1; i >= desde; i--) {
+            top.agregar(todos.obtener(i));
+        }
         return top;
     }
 
-    public List<Usuario> buscarRango(int minPuntos, int maxPuntos) {
-        List<Usuario> resultado = new ArrayList<>();
+    public ListaSimple<Usuario> buscarRango(int minPuntos, int maxPuntos) {
+        ListaSimple<Usuario> resultado = new ListaSimple<>();
         buscarRangoRec(raiz, minPuntos, maxPuntos, resultado);
         return resultado;
     }
 
-    private void buscarRangoRec(NodoArbol nodo, int min, int max, List<Usuario> lista) {
+    private void buscarRangoRec(NodoArbol nodo, int min, int max, ListaSimple<Usuario> lista) {
         if (nodo == null) return;
         if (nodo.puntos > min) buscarRangoRec(nodo.izquierdo, min, max, lista);
-        if (nodo.puntos >= min && nodo.puntos <= max) lista.add(nodo.usuario);
+        if (nodo.puntos >= min && nodo.puntos <= max) lista.agregar(nodo.usuario);
         if (nodo.puntos < max) buscarRangoRec(nodo.derecho, min, max, lista);
     }
 
-    public List<Usuario> getPorNivel(NivelUsuario nivel) {
-        List<Usuario> todos = getOrdenadoPorPuntos();
-        List<Usuario> resultado = new ArrayList<>();
-        for (Usuario u : todos) {
-            if (u.getNivel() == nivel) resultado.add(u);
+    public ListaSimple<Usuario> getPorNivel(NivelUsuario nivel) {
+        ListaSimple<Usuario> todos = getOrdenadoPorPuntos();
+        ListaSimple<Usuario> resultado = new ListaSimple<>();
+        java.util.Iterator<Usuario> it = todos.iterator();
+        while (it.hasNext()) {
+            Usuario u = it.next();
+            if (u.getNivel() == nivel) resultado.agregar(u);
         }
         return resultado;
     }

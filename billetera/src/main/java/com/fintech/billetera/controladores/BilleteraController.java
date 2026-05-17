@@ -169,7 +169,7 @@ public class BilleteraController {
         model.addAttribute("transferencias", transferencias);
 
         // Top 5 transacciones por valor (filtrados)
-        model.addAttribute("topTransacciones", gestor.getAnalitica().topTransaccionesPorValor(txnFiltradas, 5));
+        model.addAttribute("historial", new java.util.ArrayList<>());
 
         // Usuario más activo (filtrado)
         Usuario masActivo = null;
@@ -235,11 +235,14 @@ public class BilleteraController {
         model.addAttribute("fechaFin", fechaFinVal);
 
         //Rutas frecuentes del grafo
+//Rutas frecuentes del grafo
 List<Map<String, Object>> rutasFrecuentes = new ArrayList<>();
 for (Usuario u : todosUsuarios) {
-    List<com.fintech.billetera.estructuras.AristaGrafo> rutas = 
+    com.fintech.billetera.estructuras.ListaSimple<com.fintech.billetera.estructuras.AristaGrafo> rutas =
         gestor.getGrafo().getRutasFrecuentes(u.getId());
-    for (com.fintech.billetera.estructuras.AristaGrafo arista : rutas) {
+    java.util.Iterator<com.fintech.billetera.estructuras.AristaGrafo> itRutas = rutas.iterator();
+    while (itRutas.hasNext()) {
+        com.fintech.billetera.estructuras.AristaGrafo arista = itRutas.next();
         Map<String, Object> ruta = new java.util.HashMap<>();
         Usuario destino = gestor.getUsuario(arista.getDestinoId());
         ruta.put("origen", u.getNombre());
@@ -252,7 +255,6 @@ for (Usuario u : todosUsuarios) {
 rutasFrecuentes.sort((a, b) -> Integer.compare(
     (int) b.get("frecuencia"), (int) a.get("frecuencia")));
 model.addAttribute("rutasFrecuentes", rutasFrecuentes);
-
         return "analitica";
     }
 
