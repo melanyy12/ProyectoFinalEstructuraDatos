@@ -1,13 +1,13 @@
 package com.fintech.billetera.servicios;
 
 import java.util.List;
-import java.util.PriorityQueue;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fintech.billetera.estructuras.ArbolFidelizacion;
 import com.fintech.billetera.estructuras.ColaNotificaciones;
+import com.fintech.billetera.estructuras.ColaPrioridad;
 import com.fintech.billetera.estructuras.GrafoTransacciones;
 import com.fintech.billetera.estructuras.HistorialTransacciones;
 import com.fintech.billetera.estructuras.PilaReversiones;
@@ -24,7 +24,6 @@ import com.fintech.billetera.modelos.Usuario;
 import com.fintech.billetera.repositorios.BilleteraRepositorio;
 import com.fintech.billetera.repositorios.TransaccionRepositorio;
 import com.fintech.billetera.repositorios.UsuarioRepositorio;
-import com.fintech.billetera.servicios.DetectorComportamiento;
 
 @Service
 public class GestorOperaciones {
@@ -38,8 +37,7 @@ public class GestorOperaciones {
     @Autowired
     private TransaccionRepositorio transaccionRepo;
 
-    private PriorityQueue<TxnProgramada> colaProgramadas = new PriorityQueue<>(
-            (a, b) -> Integer.compare(a.getPrioridad(), b.getPrioridad()));
+    private ColaPrioridad colaProgramadas = new ColaPrioridad();
     private PilaReversiones pilaReversiones = new PilaReversiones();
     private ColaNotificaciones colaNotificaciones = new ColaNotificaciones();
     private GrafoTransacciones grafo = new GrafoTransacciones();
@@ -214,11 +212,11 @@ public class GestorOperaciones {
     }
 
     public void programarTransaccion(TxnProgramada txn) {
-        colaProgramadas.add(txn);
+        colaProgramadas.agregar(txn);
     }
 
     public void ejecutarProgramadas() {
-        while (!colaProgramadas.isEmpty() &&
+        while (!colaProgramadas.estaVacia() &&
                 colaProgramadas.peek().estaListaParaEjecutar()) {
             TxnProgramada txn = colaProgramadas.poll();
             procesarTransaccion(txn);
@@ -300,4 +298,5 @@ public class GestorOperaciones {
     public DetectorComportamiento getDetector() {
         return detector;
     }
+   
 }
