@@ -24,7 +24,6 @@ import com.fintech.billetera.modelos.Usuario;
 import com.fintech.billetera.repositorios.BilleteraRepositorio;
 import com.fintech.billetera.repositorios.TransaccionRepositorio;
 import com.fintech.billetera.repositorios.UsuarioRepositorio;
-import com.fintech.billetera.servicios.DetectorComportamiento;
 
 @Service
 public class GestorOperaciones {
@@ -300,4 +299,5 @@ public class GestorOperaciones {
     public DetectorComportamiento getDetector() {
         return detector;
     }
+    public DetectorComportamiento getDetector() { return detector; }
 }
