@@ -56,6 +56,11 @@
 
 <div class="container">
     <a href="/" class="back-link">← Volver al inicio</a>
+    <a href="/" class="back-link">← Volver al inicio</a>
+
+<div th:if="${error}" style="background:#450a0a; border:1px solid #ef4444; border-radius:10px; padding:14px 20px; margin-bottom:20px; color:#fca5a5; font-size:14px;">
+    ⚠ <span th:text="${error}">Error</span>
+</div>
 
     <div class="header-card">
         <div>

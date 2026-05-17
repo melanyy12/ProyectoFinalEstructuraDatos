@@ -77,37 +77,55 @@ public class BilleteraController {
         model.addAttribute("alertas", gestor.getColaNotificaciones().getNoLeidas());
         return "usuario";
     }
-
     @PostMapping("/transaccion/recarga")
-    public String recargar(@RequestParam String billeteraId,
-            @RequestParam double monto,
-            @RequestParam String usuarioId) {
-        Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
-                TipoTransaccion.RECARGA, monto, null, billeteraId);
-        gestor.procesarTransaccion(t);
+public String recargar(@RequestParam String billeteraId,
+                        @RequestParam double monto,
+                        @RequestParam String usuarioId,
+                        org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+    if (gestor.getBilletera(billeteraId) == null) {
+        attrs.addFlashAttribute("error", "No existe la billetera con ID: " + billeteraId);
         return "redirect:/usuarios/" + usuarioId;
     }
+    Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
+        TipoTransaccion.RECARGA, monto, null, billeteraId);
+    gestor.procesarTransaccion(t);
+    return "redirect:/usuarios/" + usuarioId;
+}
 
-    @PostMapping("/transaccion/retiro")
-    public String retirar(@RequestParam String billeteraId,
-            @RequestParam double monto,
-            @RequestParam String usuarioId) {
-        Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
-                TipoTransaccion.RETIRO, monto, billeteraId, null);
-        gestor.procesarTransaccion(t);
+@PostMapping("/transaccion/retiro")
+public String retirar(@RequestParam String billeteraId,
+                       @RequestParam double monto,
+                       @RequestParam String usuarioId,
+                       org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+    if (gestor.getBilletera(billeteraId) == null) {
+        attrs.addFlashAttribute("error", "No existe la billetera con ID: " + billeteraId);
         return "redirect:/usuarios/" + usuarioId;
     }
+    Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
+        TipoTransaccion.RETIRO, monto, billeteraId, null);
+    gestor.procesarTransaccion(t);
+    return "redirect:/usuarios/" + usuarioId;
+}
 
-    @PostMapping("/transaccion/transferencia")
-    public String transferir(@RequestParam String origenId,
-            @RequestParam String destinoId,
-            @RequestParam double monto,
-            @RequestParam String usuarioId) {
-        Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
-                TipoTransaccion.TRANSFERENCIA, monto, origenId, destinoId);
-        gestor.procesarTransaccion(t);
+@PostMapping("/transaccion/transferencia")
+public String transferir(@RequestParam String origenId,
+                          @RequestParam String destinoId,
+                          @RequestParam double monto,
+                          @RequestParam String usuarioId,
+                          org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+    if (gestor.getBilletera(origenId) == null) {
+        attrs.addFlashAttribute("error", "No existe la billetera origen con ID: " + origenId);
         return "redirect:/usuarios/" + usuarioId;
     }
+    if (gestor.getBilletera(destinoId) == null) {
+        attrs.addFlashAttribute("error", "No existe la billetera destino con ID: " + destinoId);
+        return "redirect:/usuarios/" + usuarioId;
+    }
+    Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
+        TipoTransaccion.TRANSFERENCIA, monto, origenId, destinoId);
+    gestor.procesarTransaccion(t);
+    return "redirect:/usuarios/" + usuarioId;
+}
 
     @PostMapping("/transaccion/revertir")
     public String revertir(@RequestParam String usuarioId) {
