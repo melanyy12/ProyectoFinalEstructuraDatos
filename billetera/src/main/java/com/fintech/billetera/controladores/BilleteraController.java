@@ -77,55 +77,56 @@ public class BilleteraController {
         model.addAttribute("alertas", gestor.getColaNotificaciones().getNoLeidas());
         return "usuario";
     }
+
     @PostMapping("/transaccion/recarga")
-public String recargar(@RequestParam String billeteraId,
-                        @RequestParam double monto,
-                        @RequestParam String usuarioId,
-                        org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
-    if (gestor.getBilletera(billeteraId) == null) {
-        attrs.addFlashAttribute("error", "No existe la billetera con ID: " + billeteraId);
+    public String recargar(@RequestParam String billeteraId,
+            @RequestParam double monto,
+            @RequestParam String usuarioId,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+        if (gestor.getBilletera(billeteraId) == null) {
+            attrs.addFlashAttribute("error", "No existe la billetera con ID: " + billeteraId);
+            return "redirect:/usuarios/" + usuarioId;
+        }
+        Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
+                TipoTransaccion.RECARGA, monto, null, billeteraId);
+        gestor.procesarTransaccion(t);
         return "redirect:/usuarios/" + usuarioId;
     }
-    Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
-        TipoTransaccion.RECARGA, monto, null, billeteraId);
-    gestor.procesarTransaccion(t);
-    return "redirect:/usuarios/" + usuarioId;
-}
 
-@PostMapping("/transaccion/retiro")
-public String retirar(@RequestParam String billeteraId,
-                       @RequestParam double monto,
-                       @RequestParam String usuarioId,
-                       org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
-    if (gestor.getBilletera(billeteraId) == null) {
-        attrs.addFlashAttribute("error", "No existe la billetera con ID: " + billeteraId);
+    @PostMapping("/transaccion/retiro")
+    public String retirar(@RequestParam String billeteraId,
+            @RequestParam double monto,
+            @RequestParam String usuarioId,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+        if (gestor.getBilletera(billeteraId) == null) {
+            attrs.addFlashAttribute("error", "No existe la billetera con ID: " + billeteraId);
+            return "redirect:/usuarios/" + usuarioId;
+        }
+        Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
+                TipoTransaccion.RETIRO, monto, billeteraId, null);
+        gestor.procesarTransaccion(t);
         return "redirect:/usuarios/" + usuarioId;
     }
-    Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
-        TipoTransaccion.RETIRO, monto, billeteraId, null);
-    gestor.procesarTransaccion(t);
-    return "redirect:/usuarios/" + usuarioId;
-}
 
-@PostMapping("/transaccion/transferencia")
-public String transferir(@RequestParam String origenId,
-                          @RequestParam String destinoId,
-                          @RequestParam double monto,
-                          @RequestParam String usuarioId,
-                          org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
-    if (gestor.getBilletera(origenId) == null) {
-        attrs.addFlashAttribute("error", "No existe la billetera origen con ID: " + origenId);
+    @PostMapping("/transaccion/transferencia")
+    public String transferir(@RequestParam String origenId,
+            @RequestParam String destinoId,
+            @RequestParam double monto,
+            @RequestParam String usuarioId,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+        if (gestor.getBilletera(origenId) == null) {
+            attrs.addFlashAttribute("error", "No existe la billetera origen con ID: " + origenId);
+            return "redirect:/usuarios/" + usuarioId;
+        }
+        if (gestor.getBilletera(destinoId) == null) {
+            attrs.addFlashAttribute("error", "No existe la billetera destino con ID: " + destinoId);
+            return "redirect:/usuarios/" + usuarioId;
+        }
+        Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
+                TipoTransaccion.TRANSFERENCIA, monto, origenId, destinoId);
+        gestor.procesarTransaccion(t);
         return "redirect:/usuarios/" + usuarioId;
     }
-    if (gestor.getBilletera(destinoId) == null) {
-        attrs.addFlashAttribute("error", "No existe la billetera destino con ID: " + destinoId);
-        return "redirect:/usuarios/" + usuarioId;
-    }
-    Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
-        TipoTransaccion.TRANSFERENCIA, monto, origenId, destinoId);
-    gestor.procesarTransaccion(t);
-    return "redirect:/usuarios/" + usuarioId;
-}
 
     @PostMapping("/transaccion/revertir")
     public String revertir(@RequestParam String usuarioId) {
@@ -166,7 +167,13 @@ public String transferir(@RequestParam String origenId,
         }
 
         // Top usuarios por puntos (BST)
-        model.addAttribute("topUsuarios", gestor.getArbol().getTopN(5));
+        // Convertir ListaSimple a List para Thymeleaf
+        com.fintech.billetera.estructuras.ListaSimple<Usuario> topLista = gestor.getArbol().getTopN(5);
+        List<Usuario> topUsuarios = new ArrayList<>();
+        java.util.Iterator<Usuario> itTop = topLista.iterator();
+        while (itTop.hasNext())
+            topUsuarios.add(itTop.next());
+        model.addAttribute("topUsuarios", topUsuarios);
 
         // Grafo
         model.addAttribute("ciclos", gestor.getGrafo().detectarCiclo());
@@ -252,27 +259,27 @@ public String transferir(@RequestParam String origenId,
         model.addAttribute("fechaInicio", fechaInicioVal);
         model.addAttribute("fechaFin", fechaFinVal);
 
-        //Rutas frecuentes del grafo
-//Rutas frecuentes del grafo
-List<Map<String, Object>> rutasFrecuentes = new ArrayList<>();
-for (Usuario u : todosUsuarios) {
-    com.fintech.billetera.estructuras.ListaSimple<com.fintech.billetera.estructuras.AristaGrafo> rutas =
-        gestor.getGrafo().getRutasFrecuentes(u.getId());
-    java.util.Iterator<com.fintech.billetera.estructuras.AristaGrafo> itRutas = rutas.iterator();
-    while (itRutas.hasNext()) {
-        com.fintech.billetera.estructuras.AristaGrafo arista = itRutas.next();
-        Map<String, Object> ruta = new java.util.HashMap<>();
-        Usuario destino = gestor.getUsuario(arista.getDestinoId());
-        ruta.put("origen", u.getNombre());
-        ruta.put("destino", destino != null ? destino.getNombre() : arista.getDestinoId());
-        ruta.put("frecuencia", arista.getFrecuencia());
-        ruta.put("montoAcumulado", arista.getMontoAcumulado());
-        rutasFrecuentes.add(ruta);
-    }
-}
-rutasFrecuentes.sort((a, b) -> Integer.compare(
-    (int) b.get("frecuencia"), (int) a.get("frecuencia")));
-model.addAttribute("rutasFrecuentes", rutasFrecuentes);
+        // Rutas frecuentes del grafo
+        // Rutas frecuentes del grafo
+        List<Map<String, Object>> rutasFrecuentes = new ArrayList<>();
+        for (Usuario u : todosUsuarios) {
+            com.fintech.billetera.estructuras.ListaSimple<com.fintech.billetera.estructuras.AristaGrafo> rutas = gestor
+                    .getGrafo().getRutasFrecuentes(u.getId());
+            java.util.Iterator<com.fintech.billetera.estructuras.AristaGrafo> itRutas = rutas.iterator();
+            while (itRutas.hasNext()) {
+                com.fintech.billetera.estructuras.AristaGrafo arista = itRutas.next();
+                Map<String, Object> ruta = new java.util.HashMap<>();
+                Usuario destino = gestor.getUsuario(arista.getDestinoId());
+                ruta.put("origen", u.getNombre());
+                ruta.put("destino", destino != null ? destino.getNombre() : arista.getDestinoId());
+                ruta.put("frecuencia", arista.getFrecuencia());
+                ruta.put("montoAcumulado", arista.getMontoAcumulado());
+                rutasFrecuentes.add(ruta);
+            }
+        }
+        rutasFrecuentes.sort((a, b) -> Integer.compare(
+                (int) b.get("frecuencia"), (int) a.get("frecuencia")));
+        model.addAttribute("rutasFrecuentes", rutasFrecuentes);
         return "analitica";
     }
 
@@ -383,64 +390,72 @@ model.addAttribute("rutasFrecuentes", rutasFrecuentes);
         gestor.procesarTransaccion(t);
         return "redirect:/usuarios/" + usuarioId;
     }
+
     @GetMapping("/rendimiento")
-public String rendimiento(Model model) {
-    List<Usuario> usuarios = gestor.getTodosUsuarios();
-    List<Transaccion> transacciones = gestor.getTodasTransacciones();
+    public String rendimiento(Model model) {
+        List<Usuario> usuarios = gestor.getTodosUsuarios();
+        List<Transaccion> transacciones = gestor.getTodasTransacciones();
 
-    // Comparar busqueda en Lista vs HashMap
-    long inicioLista = System.nanoTime();
-    for (Usuario u : usuarios) {
-        for (Usuario u2 : usuarios) {
-            if (u2.getId().equals(u.getId())) break;
+        // Comparar busqueda en Lista vs HashMap
+        long inicioLista = System.nanoTime();
+        for (Usuario u : usuarios) {
+            for (Usuario u2 : usuarios) {
+                if (u2.getId().equals(u.getId()))
+                    break;
+            }
         }
+        long tiempoLista = System.nanoTime() - inicioLista;
+
+        long inicioHash = System.nanoTime();
+        Map<String, Usuario> mapaUsuarios = new java.util.HashMap<>();
+        for (Usuario u : usuarios)
+            mapaUsuarios.put(u.getId(), u);
+        for (Usuario u : usuarios)
+            mapaUsuarios.get(u.getId());
+        long tiempoHash = System.nanoTime() - inicioHash;
+
+        // Comparar insercion en Lista vs Arbol BST
+        long inicioBST = System.nanoTime();
+        ArbolFidelizacion arbolTemp = new ArbolFidelizacion();
+        for (Usuario u : usuarios)
+            arbolTemp.insertar(u);
+        arbolTemp.getOrdenadoPorPuntos();
+        long tiempoBST = System.nanoTime() - inicioBST;
+
+        long inicioListaSort = System.nanoTime();
+        List<Usuario> listaTemp = new ArrayList<>(usuarios);
+        listaTemp.sort((a, b) -> Integer.compare(a.getPuntosTotales(), b.getPuntosTotales()));
+        long tiempoListaSort = System.nanoTime() - inicioListaSort;
+
+        // Comparar Pila vs Cola
+        long inicioPila = System.nanoTime();
+        PilaReversiones pilaTemp = new PilaReversiones();
+        for (Transaccion t : transacciones)
+            pilaTemp.push(t);
+        while (!pilaTemp.estaVacia())
+            pilaTemp.pop();
+        long tiempoPila = System.nanoTime() - inicioPila;
+
+        long inicioCola = System.nanoTime();
+        ColaNotificaciones colaTemp = new ColaNotificaciones();
+        for (Transaccion t : transacciones) {
+            colaTemp.encolar(new com.fintech.billetera.modelos.Alerta(
+                    t.getId(), com.fintech.billetera.modelos.TipoAlerta.SALDO_BAJO,
+                    "test", "u1"));
+        }
+        while (!colaTemp.estaVacia())
+            colaTemp.despachar();
+        long tiempoCola = System.nanoTime() - inicioCola;
+
+        model.addAttribute("tiempoLista", tiempoLista);
+        model.addAttribute("tiempoHash", tiempoHash);
+        model.addAttribute("tiempoBST", tiempoBST);
+        model.addAttribute("tiempoListaSort", tiempoListaSort);
+        model.addAttribute("tiempoPila", tiempoPila);
+        model.addAttribute("tiempoCola", tiempoCola);
+        model.addAttribute("totalUsuarios", usuarios.size());
+        model.addAttribute("totalTransacciones", transacciones.size());
+
+        return "rendimiento";
     }
-    long tiempoLista = System.nanoTime() - inicioLista;
-
-    long inicioHash = System.nanoTime();
-    Map<String, Usuario> mapaUsuarios = new java.util.HashMap<>();
-    for (Usuario u : usuarios) mapaUsuarios.put(u.getId(), u);
-    for (Usuario u : usuarios) mapaUsuarios.get(u.getId());
-    long tiempoHash = System.nanoTime() - inicioHash;
-
-    // Comparar insercion en Lista vs Arbol BST
-    long inicioBST = System.nanoTime();
-    ArbolFidelizacion arbolTemp = new ArbolFidelizacion();
-    for (Usuario u : usuarios) arbolTemp.insertar(u);
-    arbolTemp.getOrdenadoPorPuntos();
-    long tiempoBST = System.nanoTime() - inicioBST;
-
-    long inicioListaSort = System.nanoTime();
-    List<Usuario> listaTemp = new ArrayList<>(usuarios);
-    listaTemp.sort((a, b) -> Integer.compare(a.getPuntosTotales(), b.getPuntosTotales()));
-    long tiempoListaSort = System.nanoTime() - inicioListaSort;
-
-    // Comparar Pila vs Cola
-    long inicioPila = System.nanoTime();
-    PilaReversiones pilaTemp = new PilaReversiones();
-    for (Transaccion t : transacciones) pilaTemp.push(t);
-    while (!pilaTemp.estaVacia()) pilaTemp.pop();
-    long tiempoPila = System.nanoTime() - inicioPila;
-
-    long inicioCola = System.nanoTime();
-    ColaNotificaciones colaTemp = new ColaNotificaciones();
-    for (Transaccion t : transacciones) {
-        colaTemp.encolar(new com.fintech.billetera.modelos.Alerta(
-            t.getId(), com.fintech.billetera.modelos.TipoAlerta.SALDO_BAJO, 
-            "test", "u1"));
-    }
-    while (!colaTemp.estaVacia()) colaTemp.despachar();
-    long tiempoCola = System.nanoTime() - inicioCola;
-
-    model.addAttribute("tiempoLista", tiempoLista);
-    model.addAttribute("tiempoHash", tiempoHash);
-    model.addAttribute("tiempoBST", tiempoBST);
-    model.addAttribute("tiempoListaSort", tiempoListaSort);
-    model.addAttribute("tiempoPila", tiempoPila);
-    model.addAttribute("tiempoCola", tiempoCola);
-    model.addAttribute("totalUsuarios", usuarios.size());
-    model.addAttribute("totalTransacciones", transacciones.size());
-
-    return "rendimiento";
-}
 }
