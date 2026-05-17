@@ -280,6 +280,51 @@ public class BilleteraController {
         rutasFrecuentes.sort((a, b) -> Integer.compare(
                 (int) b.get("frecuencia"), (int) a.get("frecuencia")));
         model.addAttribute("rutasFrecuentes", rutasFrecuentes);
+
+        // Datos para el grafo visual
+        List<Map<String, Object>> nodosGrafo = new ArrayList<>();
+        List<Map<String, Object>> aristasGrafo = new ArrayList<>();
+
+        for (Usuario u : todosUsuarios) {
+            Map<String, Object> nodo = new java.util.HashMap<>();
+            nodo.put("id", u.getId());
+            nodo.put("label", u.getNombre());
+            nodo.put("nivel", u.getNivel().name());
+            nodo.put("puntos", u.getPuntosTotales());
+            nodosGrafo.add(nodo);
+        }
+
+        com.fintech.billetera.estructuras.MapaHash<String, com.fintech.billetera.estructuras.ListaSimple<com.fintech.billetera.estructuras.AristaGrafo>> listaAdj = gestor
+                .getGrafo().getListaAdyacencia();
+
+        com.fintech.billetera.estructuras.ListaSimple<String> claves = listaAdj.claves();
+        java.util.Iterator<String> itClaves = claves.iterator();
+        while (itClaves.hasNext()) {
+            String origenId = itClaves.next();
+            com.fintech.billetera.estructuras.ListaSimple<com.fintech.billetera.estructuras.AristaGrafo> aristas = listaAdj
+                    .obtener(origenId);
+            if (aristas != null) {
+                java.util.Iterator<com.fintech.billetera.estructuras.AristaGrafo> itA = aristas.iterator();
+                while (itA.hasNext()) {
+                    com.fintech.billetera.estructuras.AristaGrafo arista = itA.next();
+                    Map<String, Object> a = new java.util.HashMap<>();
+                    a.put("from", arista.getOrigenId());
+                    a.put("to", arista.getDestinoId());
+                    a.put("monto", arista.getMontoAcumulado());
+                    a.put("frecuencia", arista.getFrecuencia());
+                    aristasGrafo.add(a);
+                }
+            }
+        }
+
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        try {
+            model.addAttribute("nodosGrafoJson", mapper.writeValueAsString(nodosGrafo));
+            model.addAttribute("aristasGrafoJson", mapper.writeValueAsString(aristasGrafo));
+        } catch (Exception e) {
+            model.addAttribute("nodosGrafoJson", "[]");
+            model.addAttribute("aristasGrafoJson", "[]");
+        }
         return "analitica";
     }
 

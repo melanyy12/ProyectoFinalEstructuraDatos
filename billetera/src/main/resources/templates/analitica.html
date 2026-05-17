@@ -252,10 +252,9 @@
         <p th:if="${#lists.isEmpty(topTransacciones)}" class="empty">Sin transacciones aún.</p>
     </div>
 
-    <!-- Análisis del grafo -->
-  
+   <!-- Análisis del grafo -->
     <div class="section">
-        <h2>🔗 Análisis del Grafo de Transferencias</h2>
+        <h2> Análisis del Grafo de Transferencias</h2>
         <div class="info-grid" style="margin-bottom:24px;">
             <div class="info-item">
                 <h4>Usuarios en el grafo</h4>
@@ -276,7 +275,6 @@
             </div>
         </div>
 
-        <!-- Grafo visual -->
         <h3 style="font-size:15px;color:#94a3b8;margin-bottom:16px;text-transform:uppercase;">
             Visualización de Red de Transferencias
         </h3>
@@ -290,27 +288,21 @@
             <div id="grafo-red" style="width:100%;height:100%;"></div>
         </div>
 
-        <!-- Leyenda -->
         <div style="display:flex;gap:20px;margin-top:14px;flex-wrap:wrap;">
             <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#94a3b8;">
-                <div style="width:12px;height:12px;border-radius:50%;background:#fcd34d;"></div>
-                BRONCE
+                <div style="width:12px;height:12px;border-radius:50%;background:#fcd34d;"></div>BRONCE
             </div>
             <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#94a3b8;">
-                <div style="width:12px;height:12px;border-radius:50%;background:#93c5fd;"></div>
-                PLATA
+                <div style="width:12px;height:12px;border-radius:50%;background:#93c5fd;"></div>PLATA
             </div>
             <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#94a3b8;">
-                <div style="width:12px;height:12px;border-radius:50%;background:#fbbf24;"></div>
-                ORO
+                <div style="width:12px;height:12px;border-radius:50%;background:#fbbf24;"></div>ORO
             </div>
             <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#94a3b8;">
-                <div style="width:12px;height:12px;border-radius:50%;background:#a78bfa;"></div>
-                PLATINO
+                <div style="width:12px;height:12px;border-radius:50%;background:#a78bfa;"></div>PLATINO
             </div>
             <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#94a3b8;">
-                <div style="width:20px;height:2px;background:#38bdf8;"></div>
-                Transferencia (grosor = monto)
+                <div style="width:20px;height:2px;background:#38bdf8;"></div>Transferencia
             </div>
         </div>
     </div>
@@ -344,7 +336,7 @@
 
     <!-- Rutas frecuentes del grafo -->
     <div class="section">
-        <h2>🔀 Rutas Frecuentes en el Grafo de Transferencias</h2>
+        <h2> Rutas Frecuentes en el Grafo de Transferencias</h2>
         <div th:if="${not #lists.isEmpty(rutasFrecuentes)}">
             <div th:each="ruta, stat : ${rutasFrecuentes}">
                 <div style="display:flex;align-items:center;justify-content:space-between;
@@ -380,7 +372,7 @@
 
     <!-- Tabla Hash -->
     <div class="section">
-        <h2>🗂️ Tabla Hash - Acceso Rápido por ID</h2>
+        <h2> Tabla Hash - Acceso Rápido por ID</h2>
         <div class="grid2">
             <div>
                 <h3 style="font-size:14px;color:#94a3b8;margin-bottom:14px;text-transform:uppercase;">
@@ -481,17 +473,16 @@
     const aristasData = /*[[${aristasGrafoJson}]]*/ '[]';
     const nodosArr = JSON.parse(nodosData);
     const aristasArr = JSON.parse(aristasData);
+
     const colorNivel = {
-        'BRONCE': '#fcd34d',
-        'PLATA': '#93c5fd',
-        'ORO': '#fbbf24',
-        'PLATINO': '#a78bfa'
+        'BRONCE': '#fcd34d', 'PLATA': '#93c5fd',
+        'ORO': '#fbbf24', 'PLATINO': '#a78bfa'
     };
 
-    if (nodosArr.length > 0 && aristasArr.length > 0) {
+    if (nodosArr.length > 0) {
         document.getElementById('grafo-vacio').style.display = 'none';
 
-        const nodos = new vis.DataSet(nodosData.map(n => ({
+        const nodos = new vis.DataSet(nodosArr.map(n => ({
             id: n.id,
             label: n.label + '\n' + n.puntos + ' pts',
             color: {
@@ -505,8 +496,7 @@
         })));
 
         const aristas = new vis.DataSet(aristasArr.map(a => ({
-            from: a.from,
-            to: a.to,
+            from: a.from, to: a.to,
             label: '$' + Number(a.monto).toLocaleString() + '\n' + a.frecuencia + 'x',
             arrows: 'to',
             width: Math.min(1 + a.frecuencia * 2, 8),
@@ -515,46 +505,16 @@
             smooth: { type: 'curvedCW', roundness: 0.2 }
         })));
 
-        const opciones = {
-            physics: {
-                enabled: true,
-                stabilization: { iterations: 100 },
-                barnesHut: { gravitationalConstant: -3000, springLength: 200 }
-            },
-            interaction: { hover: true, zoomView: true, dragNodes: true },
-            nodes: { borderWidth: 2 },
-            edges: { selectionWidth: 3 }
-        };
-
-        const red = new vis.Network(
-            document.getElementById('grafo-red'),
-            { nodes: nodos, edges: aristas },
-            opciones
-        );
-    } else if (nodosArr.length > 0) {
-        document.getElementById('grafo-vacio').style.display = 'none';
-
-        const nodos = new vis.DataSet(nodosArr.map(n => ({
-            id: n.id,
-            label: n.label + '\n' + n.puntos + ' pts',
-            color: {
-                background: colorNivel[n.nivel] || '#38bdf8',
-                border: '#1e293b'
-            },
-            font: { color: '#0f172a', size: 13, bold: true },
-            shape: 'circle',
-            size: 30
-        })));
-
-        const opciones = {
-            physics: { enabled: false },
-            interaction: { hover: true }
-        };
-
         new vis.Network(
             document.getElementById('grafo-red'),
-            { nodes: nodos, edges: new vis.DataSet([]) },
-            opciones
+            { nodes: nodos, edges: aristas },
+            {
+                physics: { enabled: true, stabilization: { iterations: 100 },
+                    barnesHut: { gravitationalConstant: -3000, springLength: 200 } },
+                interaction: { hover: true, zoomView: true, dragNodes: true },
+                nodes: { borderWidth: 2 },
+                edges: { selectionWidth: 3 }
+            }
         );
     }
 </script>
