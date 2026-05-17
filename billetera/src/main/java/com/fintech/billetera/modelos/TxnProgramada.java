@@ -36,6 +36,9 @@ public class TxnProgramada extends Transaccion {
     public void cancelar() {
         this.estado = EstadoProgramada.CANCELADA;
     }
+    public void setUsuarioId(String usuarioId) {
+    super.setUsuarioId(usuarioId);
+}
 
     // Getters
     public Date getFechaEjecucion() { return fechaEjecucion; }
