@@ -3,471 +3,1365 @@
 <head>
     <meta charset="UTF-8">
     <title>Analítica - FintechWallet</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css"/>
+
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; }
-        .navbar { background: #1e293b; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #334155; }
-        .navbar h1 { color: #38bdf8; font-size: 22px; }
-        .navbar a { color: #94a3b8; text-decoration: none; margin-left: 24px; font-size: 14px; }
-        .navbar a:hover { color: #38bdf8; }
-        .container { max-width: 1100px; margin: 40px auto; padding: 0 24px; }
-        .back-link { color: #94a3b8; text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 20px; }
-        .back-link:hover { color: #38bdf8; }
-        .page-title { font-size: 24px; margin-bottom: 28px; }
-        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 32px; }
-        .stats-2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 32px; }
-        .stat-card { background: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155; text-align: center; }
-        .stat-card h3 { color: #94a3b8; font-size: 12px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
-        .stat-card p { font-size: 28px; font-weight: 700; color: #38bdf8; }
-        .stat-card .sub { font-size: 13px; color: #64748b; margin-top: 4px; }
-        .section { background: #1e293b; border-radius: 12px; padding: 28px; margin-bottom: 28px; border: 1px solid #334155; }
-        .section h2 { font-size: 17px; margin-bottom: 20px; color: #f1f5f9; }
-        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
-        /* Ranking usuarios */
-        .user-rank { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #0f172a; }
-        .user-rank:last-child { border-bottom: none; }
-        .rank-num { width: 32px; height: 32px; border-radius: 50%; background: #0f172a; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #38bdf8; flex-shrink: 0; }
-        .rank-info h4 { font-size: 15px; }
-        .rank-info p { font-size: 12px; color: #94a3b8; }
-        .rank-pts { font-size: 18px; font-weight: 700; color: #4ade80; }
-        /* Badges */
-        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-left: 8px; }
-        .badge-bronce { background: #78350f; color: #fcd34d; }
-        .badge-plata { background: #1e3a5f; color: #93c5fd; }
-        .badge-oro { background: #3b2100; color: #fbbf24; }
-        .badge-platino { background: #1e1b4b; color: #a78bfa; }
-        /* Info items */
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .info-item { background: #0f172a; border-radius: 10px; padding: 18px; border: 1px solid #334155; }
-        .info-item h4 { font-size: 12px; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase; }
-        .info-item p { font-size: 20px; font-weight: 700; }
-        .ciclo-si { color: #f87171; }
-        .ciclo-no { color: #4ade80; }
-        /* Barras de frecuencia */
-        .freq-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-        .freq-label { width: 110px; font-size: 13px; color: #94a3b8; flex-shrink: 0; }
-        .freq-bar-bg { flex: 1; background: #0f172a; border-radius: 6px; height: 10px; }
-        .freq-bar { height: 10px; border-radius: 6px; }
-        .freq-val { width: 40px; text-align: right; font-size: 13px; font-weight: 700; }
-        .bar-recarga { background: #4ade80; }
-        .bar-retiro { background: #f87171; }
-        .bar-transferencia { background: #38bdf8; }
-        /* Top transacciones */
-        .txn-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid #0f172a; font-size: 13px; }
-        .txn-row:last-child { border-bottom: none; }
-        .tipo-RECARGA { color: #4ade80; font-weight: 600; }
-        .tipo-RETIRO { color: #f87171; font-weight: 600; }
-        .tipo-TRANSFERENCIA { color: #38bdf8; font-weight: 600; }
-        .tipo-PAGO_PROGRAMADO { color: #a78bfa; font-weight: 600; }
-        .riesgo-ALTO { color: #f87171; font-size: 11px; }
-        .riesgo-MEDIO { color: #fbbf24; font-size: 11px; }
-        .riesgo-BAJO { color: #4ade80; font-size: 11px; }
-        /* Usuario activo */
-        .activo-card { background: #0f172a; border-radius: 10px; padding: 20px; border: 1px solid #334155; display: flex; align-items: center; gap: 20px; }
-        .activo-icon { font-size: 36px; }
-        .activo-info h3 { font-size: 18px; margin-bottom: 4px; }
-        .activo-info p { font-size: 13px; color: #94a3b8; }
-        .activo-txn { font-size: 32px; font-weight: 700; color: #38bdf8; margin-left: auto; }
-        .empty { color: #64748b; font-size: 13px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .navbar {
+            background: #ffffff;
+            padding: 14px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 52px;
+            border-bottom: 1px solid #e5e7eb;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+        }
+
+        .brand {
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 23px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .brand:hover {
+            color: #1d4ed8;
+        }
+
+        .brand-icon {
+            font-size: 22px;
+            line-height: 1;
+        }
+
+        .menu-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .menu-btn {
+            background: #2563eb;
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(37, 99, 235, 0.16);
+        }
+
+        .menu-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 48px;
+            background: #ffffff;
+            min-width: 220px;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            box-shadow: 0 18px 35px rgba(15, 23, 42, 0.14);
+            padding: 8px;
+            z-index: 200;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            color: #475569;
+            text-decoration: none;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .dropdown-menu a:hover {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 24px auto;
+            padding: 0 24px;
+        }
+
+        .back-link {
+            color: #64748b;
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-block;
+            margin-bottom: 16px;
+            font-weight: 700;
+        }
+
+        .back-link:hover {
+            color: #2563eb;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #2563eb, #06b6d4);
+            color: white;
+            border-radius: 24px;
+            padding: 26px 32px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 18px;
+            box-shadow: 0 18px 40px rgba(37, 99, 235, 0.16);
+        }
+
+        .hero h2 {
+            font-size: 28px;
+            margin-bottom: 6px;
+        }
+
+        .hero p {
+            color: #dbeafe;
+            font-size: 14px;
+        }
+
+        .hero-badge {
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            padding: 11px 16px;
+            border-radius: 999px;
+            font-weight: 800;
+            white-space: nowrap;
+            font-size: 14px;
+        }
+
+        .section {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 22px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
+            margin-bottom: 18px;
+            overflow: hidden;
+        }
+
+        .section h2,
+        .section h3 {
+            color: #0f172a;
+        }
+
+        .section h2 {
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+
+        .section h3 {
+            font-size: 16px;
+            margin-bottom: 14px;
+        }
+
+        .section-subtitle {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: -8px;
+            margin-bottom: 16px;
+        }
+
+        .filter-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+
+        .filter-form {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            color: #475569;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .form-group input,
+        .form-group select {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 11px 13px;
+            color: #0f172a;
+            font-size: 14px;
+            min-width: 170px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+            background: #ffffff;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 12px;
+            padding: 11px 20px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-soft {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .btn-soft:hover {
+            background: #bae6fd;
+        }
+
+        .filter-info {
+            color: #2563eb;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .stat-card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
+        }
+
+        .stat-card h3 {
+            color: #64748b;
+            font-size: 12px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .stat-card p {
+            font-size: 27px;
+            font-weight: 900;
+            color: #2563eb;
+            line-height: 1.1;
+        }
+
+        .stat-card .sub {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .stat-green p {
+            color: #16a34a;
+        }
+
+        .stat-red p,
+        .ciclo-si {
+            color: #dc2626;
+        }
+
+        .ciclo-no {
+            color: #16a34a;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 390px;
+            gap: 22px;
+            align-items: start;
+        }
+
+        .grid2 {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .compact-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .mini-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .mini-card h4 {
+            font-size: 12px;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 0.04em;
+        }
+
+        .mini-card p {
+            font-size: 22px;
+            font-weight: 900;
+            color: #0f172a;
+        }
+
+        .activo-card {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 18px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .activo-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #eff6ff;
+            color: #2563eb;
+            font-size: 26px;
+            flex-shrink: 0;
+        }
+
+        .activo-info h3 {
+            font-size: 17px;
+            margin-bottom: 4px;
+        }
+
+        .activo-info p {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+
+        .activo-txn {
+            margin-left: auto;
+            text-align: right;
+            font-size: 30px;
+            font-weight: 900;
+            color: #2563eb;
+        }
+
+        .activo-txn div {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .badge-bronce {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-plata {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .badge-oro {
+            background: #fef9c3;
+            color: #a16207;
+        }
+
+        .badge-platino {
+            background: #ede9fe;
+            color: #6d28d9;
+        }
+
+        .user-rank,
+        .txn-row,
+        .ruta-card,
+        .hash-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 13px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .user-rank:last-child,
+        .txn-row:last-child,
+        .ruta-card:last-child,
+        .hash-row:last-child {
+            border-bottom: none;
+        }
+
+        .rank-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 12px;
+            background: #eff6ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 14px;
+            color: #2563eb;
+            flex-shrink: 0;
+        }
+
+        .rank-info h4 {
+            font-size: 15px;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+
+        .rank-info p {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .rank-pts {
+            font-size: 16px;
+            font-weight: 900;
+            color: #16a34a;
+            white-space: nowrap;
+        }
+
+        .freq-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .freq-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .freq-label {
+            width: 110px;
+            font-size: 13px;
+            color: #475569;
+            flex-shrink: 0;
+            font-weight: 700;
+        }
+
+        .freq-bar-bg {
+            flex: 1;
+            background: #e2e8f0;
+            border-radius: 999px;
+            height: 10px;
+            overflow: hidden;
+        }
+
+        .freq-bar {
+            height: 10px;
+            border-radius: 999px;
+        }
+
+        .freq-val {
+            width: 40px;
+            text-align: right;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .bar-recarga {
+            background: #16a34a;
+        }
+
+        .bar-retiro {
+            background: #dc2626;
+        }
+
+        .bar-transferencia {
+            background: #2563eb;
+        }
+
+        .tipo-RECARGA,
+        .tipo-recarga {
+            color: #16a34a;
+            font-weight: 900;
+        }
+
+        .tipo-RETIRO,
+        .tipo-retiro {
+            color: #dc2626;
+            font-weight: 900;
+        }
+
+        .tipo-TRANSFERENCIA,
+        .tipo-transferencia {
+            color: #2563eb;
+            font-weight: 900;
+        }
+
+        .tipo-PAGO_PROGRAMADO {
+            color: #7c3aed;
+            font-weight: 900;
+        }
+
+        .riesgo-ALTO {
+            color: #dc2626;
+            background: #fee2e2;
+        }
+
+        .riesgo-MEDIO {
+            color: #a16207;
+            background: #fef3c7;
+        }
+
+        .riesgo-BAJO {
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        .risk-pill {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .tabla-riesgo {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .tabla-riesgo th {
+            text-align: left;
+            padding: 13px 12px;
+            color: #64748b;
+            font-size: 12px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        .tabla-riesgo td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .tabla-riesgo tr:hover {
+            background: #f8fafc;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+        }
+
+        .monto-riesgo {
+            font-size: 15px;
+            font-weight: 900;
+            color: #0f172a;
+        }
+
+        .fecha-riesgo,
+        .estado-riesgo,
+        .usuario-riesgo {
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .estado-riesgo {
+            font-weight: 800;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .info-item {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .info-item h4 {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .info-item p {
+            font-size: 19px;
+            font-weight: 900;
+            color: #0f172a;
+        }
+
+        #grafo-container {
+            width: 100%;
+            height: 420px;
+            background: #f8fafc;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #grafo-vacio {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #64748b;
+            font-size: 14px;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        #grafo-red {
+            width: 100%;
+            height: 100%;
+        }
+
+        .legend {
+            display: flex;
+            gap: 14px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 700;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .legend-line {
+            width: 20px;
+            height: 2px;
+            background: #2563eb;
+        }
+
+        details.section {
+            padding: 0;
+        }
+
+        details.section summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 20px 22px;
+            font-size: 17px;
+            font-weight: 900;
+            color: #0f172a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        details.section summary::-webkit-details-marker {
+            display: none;
+        }
+
+        details.section summary::after {
+            content: '+';
+            font-size: 22px;
+            color: #2563eb;
+            font-weight: 900;
+        }
+
+        details.section[open] summary::after {
+            content: '−';
+        }
+
+        .details-content {
+            padding: 0 22px 22px;
+        }
+
+        .hash-key {
+            background: #eff6ff;
+            color: #2563eb;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 900;
+            flex-shrink: 0;
+        }
+
+        .hash-value {
+            font-size: 13px;
+            color: #475569;
+            text-align: right;
+        }
+
+        .audit-card {
+            padding: 12px 14px;
+            background: #fef2f2;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            border-left: 4px solid #dc2626;
+            color: #7f1d1d;
+            font-weight: 600;
+        }
+
+        .empty {
+            color: #64748b;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .footer-action {
+            text-align: center;
+            margin: 8px 0 36px;
+        }
+
+        @media (max-width: 1100px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 760px) {
+            .navbar {
+                padding: 14px 20px;
+                gap: 18px;
+                justify-content: space-between;
+            }
+
+            .brand {
+                font-size: 20px;
+            }
+
+            .dropdown-menu {
+                right: 0;
+                min-width: 190px;
+            }
+
+            .container {
+                padding: 0 14px;
+            }
+
+            .hero {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .stats,
+            .grid2,
+            .compact-grid,
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-card {
+                align-items: stretch;
+            }
+
+            .filter-form,
+            .filter-form .form-group,
+            .filter-form input,
+            .filter-form .btn {
+                width: 100%;
+            }
+
+            .activo-card {
+                align-items: flex-start;
+            }
+        }
     </style>
 </head>
+
 <body>
 <nav class="navbar">
-    <h1> FintechWallet</h1>
-    <div>
-        <a href="/">Inicio</a>
-        <a href="/analitica">Analítica</a>
+    <a href="/" class="brand">
+        <span class="brand-icon">💳</span>
+        <span>FintechWallet</span>
+    </a>
+
+    <div class="menu-wrapper">
+        <button type="button" class="menu-btn" onclick="toggleMenu(event)">
+            ☰ Menú
+        </button>
+
+        <div id="dropdownMenu" class="dropdown-menu">
+            <a href="/">🏠 Inicio</a>
+            <a href="/analitica">📊 Analítica</a>
+            <a href="/rendimiento">⚡ Rendimiento</a>
+        </div>
     </div>
 </nav>
 
 <div class="container">
     <a href="/" class="back-link">← Volver al inicio</a>
-    <h2 class="page-title"> Panel de Analítica</h2>
 
-    <!-- Filtro por rango de fechas -->
-    <div class="section" style="margin-bottom:28px;">
-        <h2>📅 Filtrar por Rango de Fechas</h2>
-        <form action="/analitica" method="get" style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;">
-            <div style="display:flex;flex-direction:column;gap:6px;">
-                <label style="font-size:12px;color:#94a3b8;text-transform:uppercase;">Fecha Inicio</label>
-                <input type="date" name="fechaInicio"
-                       th:value="${fechaInicio}"
-                       style="background:#0f172a;border:1px solid #334155;border-radius:8px;
-                              padding:9px 12px;color:#e2e8f0;font-size:14px;"/>
+    <div class="hero">
+        <div>
+            <h2>Panel de analítica</h2>
+            <p>Resumen de transacciones, usuarios, riesgos, billeteras y grafo financiero.</p>
+        </div>
+        <div class="hero-badge">IA de riesgo activa</div>
+    </div>
+
+    <div class="section">
+        <div class="filter-card">
+            <div>
+                <h2>Filtrar por rango de fechas</h2>
+                <p class="section-subtitle">Consulta la actividad de la plataforma dentro de un periodo específico.</p>
             </div>
-            <div style="display:flex;flex-direction:column;gap:6px;">
-                <label style="font-size:12px;color:#94a3b8;text-transform:uppercase;">Fecha Fin</label>
-                <input type="date" name="fechaFin"
-                       th:value="${fechaFin}"
-                       style="background:#0f172a;border:1px solid #334155;border-radius:8px;
-                              padding:9px 12px;color:#e2e8f0;font-size:14px;"/>
-            </div>
-            <button type="submit"
-                    style="background:#38bdf8;color:#0f172a;border:none;border-radius:8px;
-                           padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer;">
-                Filtrar
-            </button>
-            <a href="/analitica"
-               style="background:transparent;border:1px solid #334155;color:#94a3b8;
-                      border-radius:8px;padding:10px 24px;font-size:14px;text-decoration:none;">
-                Ver todo
-            </a>
-        </form>
-        <p th:if="${fechaInicio != null and fechaFin != null}"
-           style="margin-top:12px;font-size:13px;color:#38bdf8;">
+
+            <form action="/analitica" method="get" class="filter-form">
+                <div class="form-group">
+                    <label>Fecha inicio</label>
+                    <input type="date" name="fechaInicio" th:value="${fechaInicio}"/>
+                </div>
+
+                <div class="form-group">
+                    <label>Fecha fin</label>
+                    <input type="date" name="fechaFin" th:value="${fechaFin}"/>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <a href="/analitica" class="btn btn-soft">Ver todo</a>
+            </form>
+        </div>
+
+        <p th:if="${fechaInicio != null and fechaFin != null}" class="filter-info" style="margin-top:14px;">
             Mostrando resultados del <strong th:text="${fechaInicio}">fecha</strong>
             al <strong th:text="${fechaFin}">fecha</strong>
         </p>
     </div>
 
-    <!-- Fila 1: métricas generales -->
     <div class="stats">
         <div class="stat-card">
-            <h3>Total Transacciones</h3>
+            <h3>Total transacciones</h3>
             <p th:text="${totalTransacciones}">0</p>
         </div>
+
         <div class="stat-card">
-            <h3>Monto Total Movilizado</h3>
+            <h3>Monto movilizado</h3>
             <p th:text="'$' + ${#numbers.formatDecimal(montoTotal, 0, 'COMMA', 0, 'POINT')}">$0</p>
         </div>
+
         <div class="stat-card">
-            <h3>Usuarios en Plataforma</h3>
+            <h3>Usuarios en plataforma</h3>
             <p th:text="${vertices}">0</p>
         </div>
+
         <div class="stat-card">
-            <h3>Ciclos en Grafo</h3>
+            <h3>Ciclos en grafo</h3>
             <p th:class="${ciclos ? 'ciclo-si' : 'ciclo-no'}"
                th:text="${ciclos ? '⚠ Sí' : '✓ No'}">No</p>
         </div>
     </div>
 
-    <!-- Fila 2: frecuencias -->
-    <div class="stats-2">
-        <div class="stat-card">
+    <div class="stats">
+        <div class="stat-card stat-green">
             <h3>Recargas</h3>
             <p th:text="${recargas}">0</p>
             <div class="sub">transacciones</div>
         </div>
-        <div class="stat-card">
+
+        <div class="stat-card stat-red">
             <h3>Retiros</h3>
             <p th:text="${retiros}">0</p>
             <div class="sub">transacciones</div>
         </div>
+
         <div class="stat-card">
             <h3>Transferencias</h3>
             <p th:text="${transferencias}">0</p>
             <div class="sub">transacciones</div>
         </div>
+
+        <div class="stat-card">
+            <h3>Riesgos detectados</h3>
+            <p th:text="${transaccionesRiesgo != null ? transaccionesRiesgo.size() : 0}">0</p>
+            <div class="sub">por IA</div>
+        </div>
     </div>
 
-    <!-- Usuario más activo -->
-    <div class="section">
-        <h2> Usuario Más Activo</h2>
-        <div th:if="${usuarioMasActivo != null}" class="activo-card">
-            <div class="activo-icon">👤</div>
-            <div class="activo-info">
-                <h3 th:text="${usuarioMasActivo.nombre}">Nombre</h3>
-                <p th:text="${usuarioMasActivo.email}">email</p>
-                <span class="badge"
-                      th:classappend="${usuarioMasActivo.nivel.name() == 'BRONCE' ? 'badge-bronce' : (usuarioMasActivo.nivel.name() == 'PLATA' ? 'badge-plata' : (usuarioMasActivo.nivel.name() == 'ORO' ? 'badge-oro' : 'badge-platino'))}"
-                      th:text="${usuarioMasActivo.nivel}">NIVEL</span>
+    <div class="main-grid">
+        <div>
+            <div class="section">
+                <h2>Usuario más activo</h2>
+
+                <div th:if="${usuarioMasActivo != null}" class="activo-card">
+                    <div class="activo-icon">👤</div>
+                    <div class="activo-info">
+                        <h3 th:text="${usuarioMasActivo.nombre}">Nombre</h3>
+                        <p th:text="${usuarioMasActivo.email}">email</p>
+                        <span class="badge"
+                              th:classappend="${usuarioMasActivo.nivel.name() == 'BRONCE' ? 'badge-bronce' : (usuarioMasActivo.nivel.name() == 'PLATA' ? 'badge-plata' : (usuarioMasActivo.nivel.name() == 'ORO' ? 'badge-oro' : 'badge-platino'))}"
+                              th:text="${usuarioMasActivo.nivel}">
+                            NIVEL
+                        </span>
+                    </div>
+                    <div class="activo-txn">
+                        <span th:text="${txnUsuarioActivo}">0</span>
+                        <div>transacciones</div>
+                    </div>
+                </div>
+
+                <p th:if="${usuarioMasActivo == null}" class="empty">
+                    No hay transacciones registradas aún.
+                </p>
             </div>
-            <div class="activo-txn">
-                <span th:text="${txnUsuarioActivo}">0</span>
-                <div style="font-size:13px;color:#94a3b8;font-weight:400;">transacciones</div>
+
+            <div class="grid2">
+                <div class="section">
+                    <h2>Top usuarios por puntos</h2>
+
+                    <div th:each="u, stat : ${topUsuarios}" class="user-rank">
+                        <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+                            <div class="rank-num" th:text="${stat.index + 1}">1</div>
+                            <div class="rank-info" style="min-width:0;">
+                                <h4>
+                                    <span th:text="${u.nombre}">Nombre</span>
+                                    <span class="badge"
+                                          th:classappend="${u.nivel.name() == 'BRONCE' ? 'badge-bronce' : (u.nivel.name() == 'PLATA' ? 'badge-plata' : (u.nivel.name() == 'ORO' ? 'badge-oro' : 'badge-platino'))}"
+                                          th:text="${u.nivel}">
+                                        NIVEL
+                                    </span>
+                                </h4>
+                                <p th:text="${u.email}">email</p>
+                            </div>
+                        </div>
+                        <div class="rank-pts" th:text="${u.puntosTotales} + ' pts'">0 pts</div>
+                    </div>
+
+                    <p th:if="${#lists.isEmpty(topUsuarios)}" class="empty">
+                        No hay usuarios aún.
+                    </p>
+                </div>
+
+                <div class="section">
+                    <h2>Frecuencia por tipo</h2>
+
+                    <div th:if="${totalTransacciones > 0}">
+                        <div class="freq-row">
+                            <span class="freq-label">Recargas</span>
+                            <div class="freq-bar-bg">
+                                <div class="freq-bar bar-recarga"
+                                     th:style="'width:' + ${recargas * 100 / totalTransacciones} + '%'"></div>
+                            </div>
+                            <span class="freq-val tipo-RECARGA" th:text="${recargas}">0</span>
+                        </div>
+
+                        <div class="freq-row">
+                            <span class="freq-label">Retiros</span>
+                            <div class="freq-bar-bg">
+                                <div class="freq-bar bar-retiro"
+                                     th:style="'width:' + ${retiros * 100 / totalTransacciones} + '%'"></div>
+                            </div>
+                            <span class="freq-val tipo-RETIRO" th:text="${retiros}">0</span>
+                        </div>
+
+                        <div class="freq-row">
+                            <span class="freq-label">Transferencias</span>
+                            <div class="freq-bar-bg">
+                                <div class="freq-bar bar-transferencia"
+                                     th:style="'width:' + ${transferencias * 100 / totalTransacciones} + '%'"></div>
+                            </div>
+                            <span class="freq-val tipo-TRANSFERENCIA" th:text="${transferencias}">0</span>
+                        </div>
+                    </div>
+
+                    <p th:if="${totalTransacciones == 0}" class="empty">
+                        Sin transacciones aún.
+                    </p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Transacciones con riesgo detectado</h2>
+                <p class="section-subtitle">Últimas operaciones marcadas por el sistema inteligente de riesgo.</p>
+
+                <div th:if="${not #lists.isEmpty(transaccionesRiesgo)}" class="table-scroll">
+                    <table class="tabla-riesgo">
+                        <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Monto</th>
+                            <th>Usuario</th>
+                            <th>Riesgo</th>
+                            <th>Estado</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <tr th:each="txn : ${transaccionesRiesgo}">
+                            <td class="fecha-riesgo"
+                                th:text="${#dates.format(txn.fecha, 'dd/MM/yyyy HH:mm:ss')}">
+                                18/05/2026 20:30:00
+                            </td>
+
+                            <td>
+                                <span th:class="'tipo-' + ${txn.tipo.name()}"
+                                      th:text="${txn.tipo}">
+                                    TIPO
+                                </span>
+                            </td>
+
+                            <td class="monto-riesgo"
+                                th:text="'$' + ${#numbers.formatDecimal(txn.valor, 0, 'COMMA', 0, 'POINT')}">
+                                $0
+                            </td>
+
+                            <td class="usuario-riesgo"
+                                th:text="${txn.usuarioId != null ? 'Usuario: ' + txn.usuarioId : '-'}">
+                                Usuario
+                            </td>
+
+                            <td>
+                                <span class="risk-pill"
+                                      th:classappend="${txn.nivelRiesgo != null ? 'riesgo-' + txn.nivelRiesgo.name() : 'riesgo-BAJO'}"
+                                      th:text="${txn.nivelRiesgo != null ? txn.nivelRiesgo : 'BAJO'}">
+                                    MEDIO
+                                </span>
+                            </td>
+
+                            <td class="estado-riesgo" th:text="${txn.estado}">
+                                ESTADO
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p th:if="${#lists.isEmpty(transaccionesRiesgo)}" class="empty">
+                    No se han detectado transacciones de riesgo.
+                </p>
             </div>
         </div>
-        <p th:if="${usuarioMasActivo == null}" class="empty">No hay transacciones registradas aún.</p>
+
+        <div>
+            <div class="section">
+                <h2>Grafo de transferencias</h2>
+                <p class="section-subtitle">Relaciones entre usuarios según transferencias realizadas.</p>
+
+                <div class="info-grid" style="margin-bottom:18px;">
+                    <div class="info-item">
+                        <h4>Usuarios</h4>
+                        <p th:text="${vertices}">0</p>
+                    </div>
+                    <div class="info-item">
+                        <h4>Relaciones</h4>
+                        <p th:text="${aristas}">0</p>
+                    </div>
+                    <div class="info-item">
+                        <h4>Ciclos</h4>
+                        <p th:class="${ciclos ? 'ciclo-si' : 'ciclo-no'}"
+                           th:text="${ciclos ? 'Sí' : 'No'}">
+                            No
+                        </p>
+                    </div>
+                    <div class="info-item">
+                        <h4>Estructura</h4>
+                        <p style="font-size:15px;color:#2563eb;">Grafo dirigido</p>
+                    </div>
+                </div>
+
+                <div id="grafo-container">
+                    <div id="grafo-vacio">
+                        <span style="font-size:32px;">🔗</span>
+                        <span>Realiza transferencias entre usuarios para ver el grafo</span>
+                    </div>
+                    <div id="grafo-red"></div>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item"><span class="legend-dot" style="background:#fcd34d;"></span>BRONCE</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#93c5fd;"></span>PLATA</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#fbbf24;"></span>ORO</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#a78bfa;"></span>PLATINO</div>
+                    <div class="legend-item"><span class="legend-line"></span>Transferencia</div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <details class="section" open>
+    <summary>Top 5 transacciones por valor</summary>
+
+    <div class="details-content">
+        <div th:if="${not #lists.isEmpty(topTransacciones)}" class="table-scroll">
+            <table class="tabla-riesgo">
+                <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Monto</th>
+                    <th>Origen</th>
+                    <th>Destino</th>
+                    <th>Estado</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="txn : ${topTransacciones}">
+                    <td>
+                        <span th:class="'tipo-' + ${txn.tipo.name()}"
+                              th:text="${txn.tipo}">
+                            TIPO
+                        </span>
+                    </td>
+
+                    <td class="monto-riesgo"
+                        th:text="'$' + ${#numbers.formatDecimal(txn.valor, 0, 'COMMA', 0, 'POINT')}">
+                        $0
+                    </td>
+
+                    <td class="usuario-riesgo"
+                        th:text="${txn.billeteraOrigenId != null ? txn.billeteraOrigenId : '-'}">
+                        Origen
+                    </td>
+
+                    <td class="usuario-riesgo"
+                        th:text="${txn.billeteraDestinoId != null ? txn.billeteraDestinoId : '-'}">
+                        Destino
+                    </td>
+
+                    <td>
+                        <span class="risk-pill"
+                              th:classappend="${txn.estado.name() == 'RECHAZADA' ? 'riesgo-ALTO' : (txn.estado.name() == 'REVERTIDA' ? 'riesgo-MEDIO' : 'riesgo-BAJO')}"
+                              th:text="${txn.estado}">
+                            ESTADO
+                        </span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p th:if="${#lists.isEmpty(topTransacciones)}" class="empty">
+            Sin transacciones aún.
+        </p>
+    </div>
+</details>
 
     <div class="grid2">
-        <!-- Top usuarios BST -->
-        <div class="section">
-            <h2> Top Usuarios por Puntos (BST)</h2>
-            <div th:each="u, stat : ${topUsuarios}">
-                <div class="user-rank">
-                    <div style="display:flex;align-items:center;gap:12px;">
-                        <div class="rank-num" th:text="${stat.index + 1}">1</div>
-                        <div class="rank-info">
-                            <h4>
-                                <span th:text="${u.nombre}">Nombre</span>
-                                <span class="badge"
-                                      th:classappend="${u.nivel.name() == 'BRONCE' ? 'badge-bronce' : (u.nivel.name() == 'PLATA' ? 'badge-plata' : (u.nivel.name() == 'ORO' ? 'badge-oro' : 'badge-platino'))}"
-                                      th:text="${u.nivel}">NIVEL</span>
-                            </h4>
-                            <p th:text="${u.email}">email</p>
-                        </div>
-                    </div>
-                    <div class="rank-pts" th:text="${u.puntosTotales} + ' pts'">0 pts</div>
-                </div>
-            </div>
-            <p th:if="${#lists.isEmpty(topUsuarios)}" class="empty">No hay usuarios aún.</p>
-        </div>
-
-        <!-- Frecuencia por tipo con barras -->
-        <div class="section">
-            <h2> Frecuencia por Tipo de Transacción</h2>
-            <div th:if="${totalTransacciones > 0}">
-                <div class="freq-row">
-                    <span class="freq-label">Recargas</span>
-                    <div class="freq-bar-bg">
-                        <div class="freq-bar bar-recarga"
-                             th:style="'width:' + ${recargas * 100 / totalTransacciones} + '%'"></div>
-                    </div>
-                    <span class="freq-val tipo-RECARGA" th:text="${recargas}">0</span>
-                </div>
-                <div class="freq-row">
-                    <span class="freq-label">Retiros</span>
-                    <div class="freq-bar-bg">
-                        <div class="freq-bar bar-retiro"
-                             th:style="'width:' + ${retiros * 100 / totalTransacciones} + '%'"></div>
-                    </div>
-                    <span class="freq-val tipo-RETIRO" th:text="${retiros}">0</span>
-                </div>
-                <div class="freq-row">
-                    <span class="freq-label">Transferencias</span>
-                    <div class="freq-bar-bg">
-                        <div class="freq-bar bar-transferencia"
-                             th:style="'width:' + ${transferencias * 100 / totalTransacciones} + '%'"></div>
-                    </div>
-                    <span class="freq-val tipo-TRANSFERENCIA" th:text="${transferencias}">0</span>
-                </div>
-            </div>
-            <p th:if="${totalTransacciones == 0}" class="empty">Sin transacciones aún.</p>
-        </div>
-    </div>
-
-    <!-- Top 5 transacciones por valor -->
-    <div class="section">
-        <h2> Top 5 Transacciones por Valor</h2>
-        <div th:each="txn : ${topTransacciones}">
-            <div class="txn-row">
-                <span th:class="'tipo-' + ${txn.tipo.name()}" th:text="${txn.tipo}">TIPO</span>
-                <span style="font-size:15px;font-weight:700;" th:text="'$' + ${#numbers.formatDecimal(txn.valor, 0, 'COMMA', 0, 'POINT')}">$0</span>
-                <span th:text="${txn.billeteraOrigenId != null ? txn.billeteraOrigenId : '-'}" style="color:#64748b;">origen</span>
-                <span th:text="${txn.billeteraDestinoId != null ? txn.billeteraDestinoId : '-'}" style="color:#64748b;">destino</span>
-                <span th:class="'riesgo-' + ${txn.nivelRiesgo.name()}" th:text="'⬤ ' + ${txn.nivelRiesgo}">BAJO</span>
-            </div>
-        </div>
-        <p th:if="${#lists.isEmpty(topTransacciones)}" class="empty">Sin transacciones aún.</p>
-    </div>
-
-   <!-- Análisis del grafo -->
-    <div class="section">
-        <h2> Análisis del Grafo de Transferencias</h2>
-        <div class="info-grid" style="margin-bottom:24px;">
-            <div class="info-item">
-                <h4>Usuarios en el grafo</h4>
-                <p th:text="${vertices}">0</p>
-            </div>
-            <div class="info-item">
-                <h4>Relaciones de transferencia</h4>
-                <p th:text="${aristas}">0</p>
-            </div>
-            <div class="info-item">
-                <h4>Ciclos detectados</h4>
-                <p th:class="${ciclos ? 'ciclo-si' : 'ciclo-no'}"
-                   th:text="${ciclos ? '⚠ Sí hay ciclos' : '✓ Sin ciclos'}">No</p>
-            </div>
-            <div class="info-item">
-                <h4>Tipo de estructura</h4>
-                <p style="color:#38bdf8;font-size:15px;">Grafo dirigido ponderado</p>
-            </div>
-        </div>
-
-        <h3 style="font-size:15px;color:#94a3b8;margin-bottom:16px;text-transform:uppercase;">
-            Visualización de Red de Transferencias
-        </h3>
-        <div id="grafo-container" style="width:100%;height:450px;background:#0f172a;
-                border-radius:10px;border:1px solid #334155;position:relative;">
-            <div id="grafo-vacio" style="display:flex;align-items:center;justify-content:center;
-                    height:100%;color:#64748b;font-size:14px;flex-direction:column;gap:8px;">
-                <span style="font-size:32px;">🔗</span>
-                <span>Realiza transferencias entre usuarios para ver el grafo</span>
-            </div>
-            <div id="grafo-red" style="width:100%;height:100%;"></div>
-        </div>
-
-        <div style="display:flex;gap:20px;margin-top:14px;flex-wrap:wrap;">
-            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#94a3b8;">
-                <div style="width:12px;height:12px;border-radius:50%;background:#fcd34d;"></div>BRONCE
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#94a3b8;">
-                <div style="width:12px;height:12px;border-radius:50%;background:#93c5fd;"></div>PLATA
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#94a3b8;">
-                <div style="width:12px;height:12px;border-radius:50%;background:#fbbf24;"></div>ORO
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#94a3b8;">
-                <div style="width:12px;height:12px;border-radius:50%;background:#a78bfa;"></div>PLATINO
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#94a3b8;">
-                <div style="width:20px;height:2px;background:#38bdf8;"></div>Transferencia
-            </div>
-        </div>
-    </div>
-
-    <!-- Billeteras más activas -->
-    <div class="section">
-        <h2> Billeteras Más Activas</h2>
-        <div th:if="${not #lists.isEmpty(billeterasActivas)}">
-            <div th:each="bil, stat : ${billeterasActivas}">
-                <div class="txn-row">
-                    <div style="display:flex;align-items:center;gap:12px;">
-                        <div class="rank-num" th:text="${stat.index + 1}">1</div>
-                        <div>
-                            <div style="font-weight:600;" th:text="${bil.nombre}">Nombre</div>
-                            <div style="font-size:12px;color:#64748b;" th:text="${bil.tipo}">TIPO</div>
-                        </div>
-                    </div>
-                    <div style="text-align:right;">
-                        <div style="font-weight:700;color:#4ade80;" 
-                             th:text="'$' + ${#numbers.formatDecimal(bil.saldo, 0, 'COMMA', 0, 'POINT')}">$0</div>
-                        <div style="font-size:12px;color:#94a3b8;" 
-                             th:text="${bil.movimientos} + ' movimientos'">0 movimientos</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <p th:if="${#lists.isEmpty(billeterasActivas)}" class="empty">
-            Sin movimientos registrados aún.
-        </p>
-    </div>
-
-    <!-- Rutas frecuentes del grafo -->
-    <div class="section">
-        <h2> Rutas Frecuentes en el Grafo de Transferencias</h2>
-        <div th:if="${not #lists.isEmpty(rutasFrecuentes)}">
-            <div th:each="ruta, stat : ${rutasFrecuentes}">
-                <div style="display:flex;align-items:center;justify-content:space-between;
-                            padding:14px;background:#0f172a;border-radius:10px;
-                            margin-bottom:10px;border:1px solid #334155;">
-                    <div style="display:flex;align-items:center;gap:12px;">
-                        <div class="rank-num" th:text="${stat.index + 1}">1</div>
-                        <div>
-                            <div style="font-size:14px;font-weight:600;">
-                                <span th:text="${ruta.origen}">Origen</span>
-                                <span style="color:#38bdf8;margin:0 8px;">→</span>
-                                <span th:text="${ruta.destino}">Destino</span>
+        <details class="section">
+            <summary>Billeteras más activas</summary>
+            <div class="details-content">
+                <div th:if="${not #lists.isEmpty(billeterasActivas)}">
+                    <div th:each="bil, stat : ${billeterasActivas}" class="txn-row">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div class="rank-num" th:text="${stat.index + 1}">1</div>
+                            <div>
+                                <div style="font-weight:800;color:#0f172a;" th:text="${bil.nombre}">Nombre</div>
+                                <div style="font-size:12px;color:#64748b;" th:text="${bil.tipo}">TIPO</div>
                             </div>
-                            <div style="font-size:12px;color:#64748b;margin-top:3px;">
-                                Transferencias realizadas
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-weight:900;color:#16a34a;"
+                                 th:text="'$' + ${#numbers.formatDecimal(bil.saldo, 0, 'COMMA', 0, 'POINT')}">
+                                $0
+                            </div>
+                            <div style="font-size:12px;color:#64748b;"
+                                 th:text="${bil.movimientos} + ' movimientos'">
+                                0 movimientos
                             </div>
                         </div>
                     </div>
-                    <div style="text-align:right;">
-                        <div style="font-size:18px;font-weight:700;color:#38bdf8;"
-                             th:text="${ruta.frecuencia} + ' veces'">0 veces</div>
-                        <div style="font-size:13px;color:#4ade80;"
-                             th:text="'$' + ${#numbers.formatDecimal(ruta.montoAcumulado, 0, 'COMMA', 0, 'POINT')}">$0</div>
+                </div>
+
+                <p th:if="${#lists.isEmpty(billeterasActivas)}" class="empty">
+                    Sin movimientos registrados aún.
+                </p>
+            </div>
+        </details>
+
+        <details class="section">
+            <summary>Rutas frecuentes</summary>
+            <div class="details-content">
+                <div th:if="${not #lists.isEmpty(rutasFrecuentes)}">
+                    <div th:each="ruta, stat : ${rutasFrecuentes}" class="ruta-card">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div class="rank-num" th:text="${stat.index + 1}">1</div>
+                            <div>
+                                <div style="font-size:14px;font-weight:800;color:#0f172a;">
+                                    <span th:text="${ruta.origen}">Origen</span>
+                                    <span style="color:#2563eb;margin:0 8px;">→</span>
+                                    <span th:text="${ruta.destino}">Destino</span>
+                                </div>
+                                <div style="font-size:12px;color:#64748b;margin-top:3px;">
+                                    Transferencias realizadas
+                                </div>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:17px;font-weight:900;color:#2563eb;"
+                                 th:text="${ruta.frecuencia} + ' veces'">
+                                0 veces
+                            </div>
+                            <div style="font-size:13px;color:#16a34a;font-weight:800;"
+                                 th:text="'$' + ${#numbers.formatDecimal(ruta.montoAcumulado, 0, 'COMMA', 0, 'POINT')}">
+                                $0
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <p th:if="${#lists.isEmpty(rutasFrecuentes)}" class="empty">
+                    No hay transferencias entre usuarios registradas aún.
+                </p>
             </div>
-        </div>
-        <p th:if="${#lists.isEmpty(rutasFrecuentes)}" class="empty">
-            No hay transferencias entre usuarios registradas aún.
-            Las rutas aparecen cuando se realizan transferencias entre distintos usuarios.
-        </p>
+        </details>
     </div>
 
-    <!-- Tabla Hash -->
-    <div class="section">
-        <h2> Tabla Hash - Acceso Rápido por ID</h2>
-        <div class="grid2">
+    <details class="section">
+        <summary>Tabla hash - acceso rápido por ID</summary>
+        <div class="details-content grid2">
             <div>
-                <h3 style="font-size:14px;color:#94a3b8;margin-bottom:14px;text-transform:uppercase;">
-                    Usuarios (HashMap)
-                </h3>
-                <div th:each="entrada : ${tablaHashUsuarios}">
-                    <div style="display:flex;gap:12px;align-items:center;padding:10px;
-                                background:#0f172a;border-radius:8px;margin-bottom:8px;
-                                border:1px solid #334155;">
-                        <div style="background:#1e3a5f;color:#93c5fd;padding:4px 10px;
-                                    border-radius:6px;font-size:12px;font-weight:700;
-                                    flex-shrink:0;" th:text="${entrada.key}">ID</div>
-                        <div style="font-size:13px;color:#cbd5e1;" 
-                             th:text="${entrada.value}">info</div>
-                    </div>
+                <h3>Usuarios</h3>
+                <div th:each="entrada : ${tablaHashUsuarios}" class="hash-row">
+                    <span class="hash-key" th:text="${entrada.key}">ID</span>
+                    <span class="hash-value" th:text="${entrada.value}">info</span>
                 </div>
                 <p th:if="${#maps.size(tablaHashUsuarios) == 0}" class="empty">
                     Sin usuarios registrados.
                 </p>
             </div>
+
             <div>
-                <h3 style="font-size:14px;color:#94a3b8;margin-bottom:14px;text-transform:uppercase;">
-                    Billeteras (HashMap)
-                </h3>
-                <div th:each="entrada : ${tablaHashBilleteras}">
-                    <div style="display:flex;gap:12px;align-items:center;padding:10px;
-                                background:#0f172a;border-radius:8px;margin-bottom:8px;
-                                border:1px solid #334155;">
-                        <div style="background:#3b2100;color:#fbbf24;padding:4px 10px;
-                                    border-radius:6px;font-size:12px;font-weight:700;
-                                    flex-shrink:0;" th:text="${entrada.key}">ID</div>
-                        <div style="font-size:13px;color:#cbd5e1;" 
-                             th:text="${entrada.value}">info</div>
-                    </div>
+                <h3>Billeteras</h3>
+                <div th:each="entrada : ${tablaHashBilleteras}" class="hash-row">
+                    <span class="hash-key" th:text="${entrada.key}">ID</span>
+                    <span class="hash-value" th:text="${entrada.value}">info</span>
                 </div>
                 <p th:if="${#maps.size(tablaHashBilleteras) == 0}" class="empty">
                     Sin billeteras registradas.
                 </p>
             </div>
         </div>
-    </div>
+    </details>
 
-    <!-- Transacciones con riesgo -->
-    <div class="section">
-        <h2> Transacciones con Riesgo Detectado</h2>
-        <div th:if="${not #lists.isEmpty(transaccionesRiesgo)}">
-            <div th:each="txn : ${transaccionesRiesgo}">
-                <div class="txn-row">
-                    <span th:class="'tipo-' + ${txn.tipo.name()}" th:text="${txn.tipo}">TIPO</span>
-                    <span style="font-size:15px;font-weight:700;"
-                          th:text="'$' + ${#numbers.formatDecimal(txn.valor, 0, 'COMMA', 0, 'POINT')}">$0</span>
-                    <span style="color:#64748b;" th:text="${txn.usuarioId != null ? 'Usuario: ' + txn.usuarioId : '-'}">usuario</span>
-                    <span th:class="'riesgo-' + ${txn.nivelRiesgo.name()}">
-                         <span th:text="${txn.nivelRiesgo}">BAJO</span>
-                    </span>
-                    <span style="color:#64748b;font-size:12px;" th:text="${txn.estado}">ESTADO</span>
-                </div>
-            </div>
-        </div>
-        <p th:if="${#lists.isEmpty(transaccionesRiesgo)}" class="empty">
-             No se han detectado transacciones de riesgo.
-        </p>
-    </div>
-
-    <!-- Historial de auditoría -->
-    <div class="section">
-        <h2> Historial de Auditoría</h2>
-        <div th:if="${not #lists.isEmpty(auditorias)}">
-            <div th:each="evento : ${auditorias}">
-                <div style="padding: 10px 14px; background: #0f172a; border-radius: 8px;
-                            margin-bottom: 8px; font-size: 13px; border-left: 3px solid #f87171;
-                            color: #cbd5e1;">
+    <details class="section">
+        <summary>Historial de auditoría IA</summary>
+        <div class="details-content">
+            <div th:if="${not #lists.isEmpty(auditorias)}">
+                <div th:each="evento : ${auditorias}" class="audit-card">
                     <span th:text="${evento}">evento</span>
                 </div>
             </div>
-        </div>
-        <p th:if="${#lists.isEmpty(auditorias)}" class="empty">
-             Sin eventos de auditoría registrados.
-        </p>
-    </div>
 
-    <div style="text-align:center;margin-top:12px;margin-bottom:40px;">
-        <a href="/rendimiento"
-           style="background:#1e293b;border:1px solid #334155;color:#38bdf8;
-                  border-radius:10px;padding:16px 32px;font-size:15px;
-                  text-decoration:none;display:inline-block;">
-             Ver Comparador de Rendimiento de Estructuras →
+            <p th:if="${#lists.isEmpty(auditorias)}" class="empty">
+                Sin eventos de auditoría registrados.
+            </p>
+        </div>
+    </details>
+
+    <div class="footer-action">
+        <a href="/rendimiento" class="btn btn-primary">
+            Ver comparador de rendimiento de estructuras →
         </a>
     </div>
-
 </div>
-</body>
+
+<script>
+    function toggleMenu(event) {
+        event.stopPropagation();
+        const menu = document.getElementById('dropdownMenu');
+        menu.classList.toggle('show');
+    }
+
+    document.addEventListener('click', function(event) {
+        const menu = document.getElementById('dropdownMenu');
+        const wrapper = document.querySelector('.menu-wrapper');
+
+        if (menu && wrapper && !wrapper.contains(event.target)) {
+            menu.classList.remove('show');
+        }
+    });
+</script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css"/>
 <script th:inline="javascript">
     const nodosData = /*[[${nodosGrafoJson}]]*/ '[]';
     const aristasData = /*[[${aristasGrafoJson}]]*/ '[]';
@@ -475,8 +1369,10 @@
     const aristasArr = JSON.parse(aristasData);
 
     const colorNivel = {
-        'BRONCE': '#fcd34d', 'PLATA': '#93c5fd',
-        'ORO': '#fbbf24', 'PLATINO': '#a78bfa'
+        'BRONCE': '#fcd34d',
+        'PLATA': '#93c5fd',
+        'ORO': '#fbbf24',
+        'PLATINO': '#a78bfa'
     };
 
     if (nodosArr.length > 0) {
@@ -486,36 +1382,69 @@
             id: n.id,
             label: n.label + '\n' + n.puntos + ' pts',
             color: {
-                background: colorNivel[n.nivel] || '#38bdf8',
-                border: '#1e293b',
-                highlight: { background: colorNivel[n.nivel], border: '#fff' }
+                background: colorNivel[n.nivel] || '#bfdbfe',
+                border: '#2563eb',
+                highlight: {
+                    background: colorNivel[n.nivel] || '#bfdbfe',
+                    border: '#1d4ed8'
+                }
             },
-            font: { color: '#0f172a', size: 13, bold: true },
+            font: {
+                color: '#0f172a',
+                size: 13,
+                bold: true
+            },
             shape: 'circle',
-            size: 30 + Math.min(n.puntos / 50, 30)
+            size: 28 + Math.min(n.puntos / 60, 26)
         })));
 
         const aristas = new vis.DataSet(aristasArr.map(a => ({
-            from: a.from, to: a.to,
+            from: a.from,
+            to: a.to,
             label: '$' + Number(a.monto).toLocaleString() + '\n' + a.frecuencia + 'x',
             arrows: 'to',
             width: Math.min(1 + a.frecuencia * 2, 8),
-            color: { color: '#38bdf8', highlight: '#7dd3fc' },
-            font: { color: '#94a3b8', size: 11, align: 'middle' },
-            smooth: { type: 'curvedCW', roundness: 0.2 }
+            color: {
+                color: '#2563eb',
+                highlight: '#1d4ed8'
+            },
+            font: {
+                color: '#475569',
+                size: 11,
+                align: 'middle'
+            },
+            smooth: {
+                type: 'curvedCW',
+                roundness: 0.2
+            }
         })));
 
         new vis.Network(
             document.getElementById('grafo-red'),
             { nodes: nodos, edges: aristas },
             {
-                physics: { enabled: true, stabilization: { iterations: 100 },
-                    barnesHut: { gravitationalConstant: -3000, springLength: 200 } },
-                interaction: { hover: true, zoomView: true, dragNodes: true },
-                nodes: { borderWidth: 2 },
-                edges: { selectionWidth: 3 }
+                physics: {
+                    enabled: true,
+                    stabilization: { iterations: 100 },
+                    barnesHut: {
+                        gravitationalConstant: -3000,
+                        springLength: 190
+                    }
+                },
+                interaction: {
+                    hover: true,
+                    zoomView: true,
+                    dragNodes: true
+                },
+                nodes: {
+                    borderWidth: 2
+                },
+                edges: {
+                    selectionWidth: 3
+                }
             }
         );
     }
 </script>
+</body>
 </html>

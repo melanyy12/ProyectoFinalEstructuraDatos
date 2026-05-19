@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-BilleteraApplication<billetera>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.fintech.billetera.BilleteraApplication",
+            "projectName": "billetera",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

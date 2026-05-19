@@ -17,6 +17,7 @@ import com.fintech.billetera.estructuras.ColaNotificaciones;
 import com.fintech.billetera.estructuras.PilaReversiones;
 import com.fintech.billetera.modelos.Alerta;
 import com.fintech.billetera.modelos.Billetera;
+import com.fintech.billetera.modelos.EstadoTransaccion;
 import com.fintech.billetera.modelos.TipoAlerta;
 import com.fintech.billetera.modelos.TipoBilletera;
 import com.fintech.billetera.modelos.TipoTransaccion;
@@ -59,22 +60,31 @@ public class BilleteraController {
     public String crearBilletera(@RequestParam String id,
             @RequestParam String nombre,
             @RequestParam String tipo,
-            @RequestParam String usuarioId) {
+            @RequestParam String usuarioId,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+
         Billetera b = new Billetera(id, nombre, TipoBilletera.valueOf(tipo), usuarioId);
         gestor.registrarBilletera(b);
+        attrs.addFlashAttribute("toast", "Billetera creada correctamente");
+
         return "redirect:/usuarios/" + usuarioId;
     }
 
     @GetMapping("/usuarios/{id}")
     public String verUsuario(@PathVariable String id, Model model) {
         Usuario u = gestor.getUsuario(id);
-        if (u == null)
+
+        if (u == null) {
             return "redirect:/";
+        }
+
         List<Billetera> billeteras = gestor.getBilleterasDeUsuario(id);
         u.setBilleteras(billeteras);
+
         model.addAttribute("usuario", u);
         model.addAttribute("historial", gestor.getHistorial(id));
         model.addAttribute("alertas", gestor.getColaNotificaciones().getNoLeidas());
+
         return "usuario";
     }
 
@@ -83,13 +93,23 @@ public class BilleteraController {
             @RequestParam double monto,
             @RequestParam String usuarioId,
             org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+
         if (gestor.getBilletera(billeteraId) == null) {
-            attrs.addFlashAttribute("error", "No existe la billetera con ID: " + billeteraId);
+            attrs.addFlashAttribute("toastError", "No existe la billetera con ID: " + billeteraId);
             return "redirect:/usuarios/" + usuarioId;
         }
+
         Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
                 TipoTransaccion.RECARGA, monto, null, billeteraId);
-        gestor.procesarTransaccion(t);
+
+        boolean exito = gestor.procesarTransaccion(t);
+
+        if (exito && t.getEstado() != EstadoTransaccion.RECHAZADA) {
+            attrs.addFlashAttribute("toast", "Recarga realizada correctamente");
+        } else {
+            attrs.addFlashAttribute("toastError", "La recarga fue rechazada");
+        }
+
         return "redirect:/usuarios/" + usuarioId;
     }
 
@@ -98,13 +118,23 @@ public class BilleteraController {
             @RequestParam double monto,
             @RequestParam String usuarioId,
             org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+
         if (gestor.getBilletera(billeteraId) == null) {
-            attrs.addFlashAttribute("error", "No existe la billetera con ID: " + billeteraId);
+            attrs.addFlashAttribute("toastError", "No existe la billetera con ID: " + billeteraId);
             return "redirect:/usuarios/" + usuarioId;
         }
+
         Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
                 TipoTransaccion.RETIRO, monto, billeteraId, null);
-        gestor.procesarTransaccion(t);
+
+        boolean exito = gestor.procesarTransaccion(t);
+
+        if (exito && t.getEstado() != EstadoTransaccion.RECHAZADA) {
+            attrs.addFlashAttribute("toast", "Retiro realizado correctamente");
+        } else {
+            attrs.addFlashAttribute("toastError", "Retiro rechazado: saldo insuficiente");
+        }
+
         return "redirect:/usuarios/" + usuarioId;
     }
 
@@ -114,23 +144,86 @@ public class BilleteraController {
             @RequestParam double monto,
             @RequestParam String usuarioId,
             org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+
         if (gestor.getBilletera(origenId) == null) {
-            attrs.addFlashAttribute("error", "No existe la billetera origen con ID: " + origenId);
+            attrs.addFlashAttribute("toastError", "No existe la billetera origen con ID: " + origenId);
             return "redirect:/usuarios/" + usuarioId;
         }
+
         if (gestor.getBilletera(destinoId) == null) {
-            attrs.addFlashAttribute("error", "No existe la billetera destino con ID: " + destinoId);
+            attrs.addFlashAttribute("toastError", "No existe la billetera destino con ID: " + destinoId);
             return "redirect:/usuarios/" + usuarioId;
         }
+
         Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
                 TipoTransaccion.TRANSFERENCIA, monto, origenId, destinoId);
-        gestor.procesarTransaccion(t);
+
+        boolean exito = gestor.procesarTransaccion(t);
+
+        if (exito && t.getEstado() != EstadoTransaccion.RECHAZADA) {
+            attrs.addFlashAttribute("toast", "Transferencia realizada correctamente");
+        } else {
+            attrs.addFlashAttribute("toastError", "Transferencia rechazada: saldo insuficiente");
+        }
+
+        return "redirect:/usuarios/" + usuarioId;
+    }
+
+    @PostMapping("/transaccion/transferencia-externa")
+    public String transferenciaExterna(@RequestParam String usuarioId,
+            @RequestParam String origenId,
+            @RequestParam String destinoUsuarioId,
+            @RequestParam String destinoBilleteraId,
+            @RequestParam double monto,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+
+        Usuario destinoUsuario = gestor.getUsuario(destinoUsuarioId);
+
+        if (destinoUsuario == null) {
+            attrs.addFlashAttribute("toastError", "No existe el usuario destino con ID: " + destinoUsuarioId);
+            return "redirect:/usuarios/" + usuarioId;
+        }
+
+        Billetera origen = gestor.getBilletera(origenId);
+
+        if (origen == null) {
+            attrs.addFlashAttribute("toastError", "No existe la billetera origen con ID: " + origenId);
+            return "redirect:/usuarios/" + usuarioId;
+        }
+
+        Billetera destino = gestor.getBilletera(destinoBilleteraId);
+
+        if (destino == null || !destino.getUsuarioId().equals(destinoUsuarioId)) {
+            attrs.addFlashAttribute("toastError", "La billetera destino no pertenece al usuario indicado");
+            return "redirect:/usuarios/" + usuarioId;
+        }
+
+        Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
+                TipoTransaccion.TRANSFERENCIA, monto, origenId, destinoBilleteraId);
+
+        boolean exito = gestor.procesarTransaccion(t);
+
+        if (exito && t.getEstado() != EstadoTransaccion.RECHAZADA) {
+            attrs.addFlashAttribute("toast", "Transferencia externa realizada correctamente");
+        } else {
+            attrs.addFlashAttribute("toastError", "Transferencia externa rechazada: saldo insuficiente");
+        }
+
         return "redirect:/usuarios/" + usuarioId;
     }
 
     @PostMapping("/transaccion/revertir")
-    public String revertir(@RequestParam String usuarioId) {
-        gestor.revertirUltimaTransaccion();
+    public String revertir(@RequestParam String usuarioId,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+
+        boolean exito = gestor.revertirUltimaTransaccion();
+
+        if (exito) {
+            attrs.addFlashAttribute("toast", "Última transacción revertida correctamente");
+        } else {
+            attrs.addFlashAttribute("toastError", "No hay transacciones disponibles para revertir");
+        }
+
         return "redirect:/usuarios/" + usuarioId;
     }
 
@@ -138,13 +231,13 @@ public class BilleteraController {
     public String analitica(Model model,
             @RequestParam(required = false) String fechaInicio,
             @RequestParam(required = false) String fechaFin) {
+
         List<Usuario> todosUsuarios = gestor.getTodosUsuarios();
         todosUsuarios.forEach(u -> gestor.getGrafo().agregarVertice(u));
-        todosUsuarios.forEach(u -> gestor.getArbol().insertar(u));
+        todosUsuarios.forEach(u -> gestor.getArbol().actualizar(u));
 
         List<Transaccion> todasTxn = gestor.getTodasTransacciones();
 
-        // Filtro por rango de fechas
         List<Transaccion> txnFiltradas = todasTxn;
         String fechaInicioVal = fechaInicio;
         String fechaFinVal = fechaFin;
@@ -156,8 +249,10 @@ public class BilleteraController {
                 java.util.Date inicio = sdf.parse(fechaInicio);
                 java.util.Date fin = sdf.parse(fechaFin);
                 fin = new java.util.Date(fin.getTime() + 86400000 - 1);
+
                 final java.util.Date inicioFinal = inicio;
                 final java.util.Date finFinal = fin;
+
                 txnFiltradas = todasTxn.stream()
                         .filter(t -> !t.getFecha().before(inicioFinal) && !t.getFecha().after(finFinal))
                         .collect(java.util.stream.Collectors.toList());
@@ -166,52 +261,64 @@ public class BilleteraController {
             }
         }
 
-        // Top usuarios por puntos (BST)
-        // Convertir ListaSimple a List para Thymeleaf
         com.fintech.billetera.estructuras.ListaSimple<Usuario> topLista = gestor.getArbol().getTopN(5);
         List<Usuario> topUsuarios = new ArrayList<>();
         java.util.Iterator<Usuario> itTop = topLista.iterator();
-        while (itTop.hasNext())
+
+        while (itTop.hasNext()) {
             topUsuarios.add(itTop.next());
+        }
+
         model.addAttribute("topUsuarios", topUsuarios);
 
-        // Grafo
         model.addAttribute("ciclos", gestor.getGrafo().detectarCiclo());
         model.addAttribute("vertices", todosUsuarios.size());
         model.addAttribute("aristas", gestor.getGrafo().getTotalAristas());
 
-        // Total transacciones y monto (filtrados)
         model.addAttribute("totalTransacciones", txnFiltradas.size());
         double montoTotal = txnFiltradas.stream().mapToDouble(Transaccion::getValor).sum();
         model.addAttribute("montoTotal", montoTotal);
 
-        // Frecuencia por tipo (filtrados)
         long recargas = txnFiltradas.stream().filter(t -> t.getTipo() == TipoTransaccion.RECARGA).count();
         long retiros = txnFiltradas.stream().filter(t -> t.getTipo() == TipoTransaccion.RETIRO).count();
         long transferencias = txnFiltradas.stream().filter(t -> t.getTipo() == TipoTransaccion.TRANSFERENCIA).count();
+
         model.addAttribute("recargas", recargas);
         model.addAttribute("retiros", retiros);
         model.addAttribute("transferencias", transferencias);
 
-        // Top 5 transacciones por valor (filtrados)
+        List<Transaccion> topTransacciones = txnFiltradas.stream()
+                .sorted((t1, t2) -> Double.compare(t2.getValor(), t1.getValor()))
+                .limit(5)
+                .collect(java.util.stream.Collectors.toList());
+        model.addAttribute("topTransacciones", topTransacciones);
+
+        List<Transaccion> ultimasTransacciones = txnFiltradas.stream()
+                .sorted((t1, t2) -> t2.getFecha().compareTo(t1.getFecha()))
+                .limit(10)
+                .collect(java.util.stream.Collectors.toList());
+        model.addAttribute("ultimasTransacciones", ultimasTransacciones);
+
         model.addAttribute("historial", new java.util.ArrayList<>());
 
-        // Usuario más activo (filtrado)
         Usuario masActivo = null;
         int maxTxn = 0;
+
         for (Usuario u : todosUsuarios) {
             final String uid = u.getId();
             long cantidad = txnFiltradas.stream()
-                    .filter(t -> uid.equals(t.getUsuarioId())).count();
+                    .filter(t -> uid.equals(t.getUsuarioId()))
+                    .count();
+
             if (cantidad > maxTxn) {
                 maxTxn = (int) cantidad;
                 masActivo = u;
             }
         }
+
         model.addAttribute("usuarioMasActivo", masActivo);
         model.addAttribute("txnUsuarioActivo", maxTxn);
 
-        // Billeteras más activas (filtradas)
         Map<String, Long> conteoActividad = txnFiltradas.stream()
                 .flatMap(t -> java.util.stream.Stream.of(t.getBilleteraOrigenId(), t.getBilleteraDestinoId()))
                 .filter(id -> id != null)
@@ -221,8 +328,10 @@ public class BilleteraController {
         billeterasActivas.sort((a, b) -> Long.compare(b.getValue(), a.getValue()));
 
         List<Map<String, Object>> billeterasConInfo = new ArrayList<>();
+
         for (Map.Entry<String, Long> entry : billeterasActivas) {
             Billetera bil = gestor.getBilletera(entry.getKey());
+
             if (bil != null) {
                 Map<String, Object> info = new java.util.HashMap<>();
                 info.put("id", bil.getId());
@@ -233,43 +342,70 @@ public class BilleteraController {
                 billeterasConInfo.add(info);
             }
         }
+
         model.addAttribute("billeterasActivas", billeterasConInfo);
 
-        // Tabla hash
         Map<String, String> tablaHashUsuarios = new java.util.LinkedHashMap<>();
+
         for (Usuario u : todosUsuarios) {
             tablaHashUsuarios.put(u.getId(),
                     u.getNombre() + " | " + u.getNivel() + " | " + u.getPuntosTotales() + " pts");
         }
+
         Map<String, String> tablaHashBilleteras = new java.util.LinkedHashMap<>();
+
         for (Billetera b : gestor.getTodasBilleteras()) {
             tablaHashBilleteras.put(b.getId(), b.getNombre() + " | " + b.getTipo() + " | $" + b.getSaldo());
         }
+
         model.addAttribute("tablaHashUsuarios", tablaHashUsuarios);
         model.addAttribute("tablaHashBilleteras", tablaHashBilleteras);
 
-        // Transacciones con riesgo
-        List<Transaccion> transaccionesRiesgo = todasTxn.stream()
+        List<Transaccion> transaccionesRiesgo = txnFiltradas.stream()
+                .filter(t -> t.getEstado() == EstadoTransaccion.COMPLETADA)
+                .filter(t -> t.getNivelRiesgo() != null)
                 .filter(t -> t.getNivelRiesgo() != com.fintech.billetera.modelos.NivelRiesgo.BAJO)
+                .sorted((t1, t2) -> t2.getFecha().compareTo(t1.getFecha()))
                 .collect(java.util.stream.Collectors.toList());
-        model.addAttribute("transaccionesRiesgo", transaccionesRiesgo);
-        model.addAttribute("auditorias", gestor.getDetector().getHistorialAuditoria());
 
-        // Fechas para mantener el filtro en el formulario
+        model.addAttribute("transaccionesRiesgo", transaccionesRiesgo);
+
+        List<String> auditorias = new ArrayList<>();
+        java.util.Iterator itAuditorias = gestor.getDetector().getHistorialAuditoria().iterator();
+
+        while (itAuditorias.hasNext()) {
+            auditorias.add((String) itAuditorias.next());
+        }
+
+        if (auditorias.isEmpty()) {
+            for (Transaccion txn : transaccionesRiesgo) {
+                auditorias.add(
+                        txn.getFecha() +
+                        " - IA detectó riesgo " + txn.getNivelRiesgo() +
+                        " en la transacción " + txn.getId() +
+                        " del usuario " + txn.getUsuarioId() +
+                        ". Tipo: " + txn.getTipo() +
+                        ". Monto: $" + txn.getValor()
+                );
+            }
+        }
+
+        model.addAttribute("auditorias", auditorias);
         model.addAttribute("fechaInicio", fechaInicioVal);
         model.addAttribute("fechaFin", fechaFinVal);
 
-        // Rutas frecuentes del grafo
-        // Rutas frecuentes del grafo
         List<Map<String, Object>> rutasFrecuentes = new ArrayList<>();
+
         for (Usuario u : todosUsuarios) {
             com.fintech.billetera.estructuras.ListaSimple<com.fintech.billetera.estructuras.AristaGrafo> rutas = gestor
                     .getGrafo().getRutasFrecuentes(u.getId());
             java.util.Iterator<com.fintech.billetera.estructuras.AristaGrafo> itRutas = rutas.iterator();
+
             while (itRutas.hasNext()) {
                 com.fintech.billetera.estructuras.AristaGrafo arista = itRutas.next();
                 Map<String, Object> ruta = new java.util.HashMap<>();
                 Usuario destino = gestor.getUsuario(arista.getDestinoId());
+
                 ruta.put("origen", u.getNombre());
                 ruta.put("destino", destino != null ? destino.getNombre() : arista.getDestinoId());
                 ruta.put("frecuencia", arista.getFrecuencia());
@@ -277,11 +413,11 @@ public class BilleteraController {
                 rutasFrecuentes.add(ruta);
             }
         }
+
         rutasFrecuentes.sort((a, b) -> Integer.compare(
                 (int) b.get("frecuencia"), (int) a.get("frecuencia")));
         model.addAttribute("rutasFrecuentes", rutasFrecuentes);
 
-        // Datos para el grafo visual
         List<Map<String, Object>> nodosGrafo = new ArrayList<>();
         List<Map<String, Object>> aristasGrafo = new ArrayList<>();
 
@@ -299,12 +435,15 @@ public class BilleteraController {
 
         com.fintech.billetera.estructuras.ListaSimple<String> claves = listaAdj.claves();
         java.util.Iterator<String> itClaves = claves.iterator();
+
         while (itClaves.hasNext()) {
             String origenId = itClaves.next();
             com.fintech.billetera.estructuras.ListaSimple<com.fintech.billetera.estructuras.AristaGrafo> aristas = listaAdj
                     .obtener(origenId);
+
             if (aristas != null) {
                 java.util.Iterator<com.fintech.billetera.estructuras.AristaGrafo> itA = aristas.iterator();
+
                 while (itA.hasNext()) {
                     com.fintech.billetera.estructuras.AristaGrafo arista = itA.next();
                     Map<String, Object> a = new java.util.HashMap<>();
@@ -318,6 +457,7 @@ public class BilleteraController {
         }
 
         com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
         try {
             model.addAttribute("nodosGrafoJson", mapper.writeValueAsString(nodosGrafo));
             model.addAttribute("aristasGrafoJson", mapper.writeValueAsString(aristasGrafo));
@@ -325,12 +465,14 @@ public class BilleteraController {
             model.addAttribute("nodosGrafoJson", "[]");
             model.addAttribute("aristasGrafoJson", "[]");
         }
+
         return "analitica";
     }
 
     @GetMapping("/usuario/buscar")
     public String buscarUsuario(@RequestParam String id, Model model) {
         Usuario u = gestor.getUsuario(id);
+
         if (u == null) {
             model.addAttribute("usuarios", gestor.getTodosUsuarios());
             model.addAttribute("totalUsuarios", gestor.getTodosUsuarios().size());
@@ -338,6 +480,7 @@ public class BilleteraController {
             model.addAttribute("errorBusqueda", "No se encontró ningún usuario con ID: " + id);
             return "index";
         }
+
         return "redirect:/usuarios/" + u.getId();
     }
 
@@ -345,14 +488,21 @@ public class BilleteraController {
     public String modificarUsuario(@RequestParam String id,
             @RequestParam String nombre,
             @RequestParam String email,
-            @RequestParam String telefono) {
+            @RequestParam String telefono,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+
         Usuario u = gestor.getUsuario(id);
+
         if (u != null) {
             u.setNombre(nombre);
             u.setEmail(email);
             u.setTelefono(telefono);
             gestor.registrarUsuario(u);
+            attrs.addFlashAttribute("toast", "Usuario actualizado correctamente");
+        } else {
+            attrs.addFlashAttribute("toastError", "No se encontró el usuario");
         }
+
         return "redirect:/usuarios/" + id;
     }
 
@@ -361,49 +511,84 @@ public class BilleteraController {
             @RequestParam String origenId,
             @RequestParam String destinoId,
             @RequestParam double monto,
-            @RequestParam String fechaEjecucion) {
+            @RequestParam String fechaEjecucion,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
         try {
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
             java.util.Date fecha = sdf.parse(fechaEjecucion);
+
             TxnProgramada txn = new TxnProgramada(
                     "TP" + System.currentTimeMillis(),
                     TipoTransaccion.PAGO_PROGRAMADO,
                     monto, origenId, destinoId, fecha, "manual");
+
             txn.setUsuarioId(usuarioId);
             gestor.programarTransaccion(txn);
+            attrs.addFlashAttribute("toast", "Transacción programada correctamente");
         } catch (Exception e) {
+            attrs.addFlashAttribute("toastError", "Error al programar la transacción");
             System.out.println("Error al programar: " + e.getMessage());
         }
+
         return "redirect:/usuarios/" + usuarioId;
     }
 
     @PostMapping("/transaccion/ejecutarProgramadas")
-    public String ejecutarProgramadas(@RequestParam String usuarioId) {
+    public String ejecutarProgramadas(@RequestParam String usuarioId,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+
         gestor.ejecutarProgramadas();
+        attrs.addFlashAttribute("toast", "Operaciones programadas ejecutadas");
+
         return "redirect:/usuarios/" + usuarioId;
     }
 
     @GetMapping("/beneficios/{usuarioId}")
     public String verBeneficios(@PathVariable String usuarioId, Model model) {
         Usuario u = gestor.getUsuario(usuarioId);
-        if (u == null)
+
+        if (u == null) {
             return "redirect:/";
+        }
+
         List<Billetera> billeteras = gestor.getBilleterasDeUsuario(usuarioId);
         u.setBilleteras(billeteras);
+
+        List<Object> beneficiosDisponibles = new ArrayList<>();
+        java.util.Iterator<?> itDisponibles = gestor.getSistemaRecompensas()
+                .getBeneficiosDisponibles(u)
+                .iterator();
+
+        while (itDisponibles.hasNext()) {
+            beneficiosDisponibles.add(itDisponibles.next());
+        }
+
+        List<Object> todosBeneficios = new ArrayList<>();
+        java.util.Iterator<?> itTodos = gestor.getSistemaRecompensas()
+                .getBeneficiosPorNivel(u.getNivel())
+                .iterator();
+
+        while (itTodos.hasNext()) {
+            todosBeneficios.add(itTodos.next());
+        }
+
         model.addAttribute("usuario", u);
-        model.addAttribute("beneficiosDisponibles",
-                gestor.getSistemaRecompensas().getBeneficiosDisponibles(u));
-        model.addAttribute("todosBeneficios",
-                gestor.getSistemaRecompensas().getBeneficiosPorNivel(u.getNivel()));
+        model.addAttribute("beneficiosDisponibles", beneficiosDisponibles);
+        model.addAttribute("todosBeneficios", todosBeneficios);
+
         return "beneficios";
     }
 
     @PostMapping("/beneficios/canjear")
     public String canjearBeneficio(@RequestParam String usuarioId,
-            @RequestParam String beneficioId) {
+            @RequestParam String beneficioId,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+
         Usuario u = gestor.getUsuario(usuarioId);
+
         if (u != null) {
             boolean exito = gestor.getSistemaRecompensas().canjearBeneficio(u, beneficioId);
+
             if (exito) {
                 gestor.registrarUsuario(u);
                 gestor.generarAlerta(new Alerta(
@@ -411,29 +596,15 @@ public class BilleteraController {
                         TipoAlerta.CANJE_BENEFICIO,
                         "Beneficio canjeado exitosamente",
                         usuarioId));
+                attrs.addFlashAttribute("toast", "Beneficio canjeado exitosamente");
+            } else {
+                attrs.addFlashAttribute("toastError", "No tienes puntos suficientes para canjear este beneficio");
             }
+        } else {
+            attrs.addFlashAttribute("toastError", "No se encontró el usuario");
         }
-        return "redirect:/beneficios/" + usuarioId;
-    }
 
-    @PostMapping("/transaccion/transferencia-externa")
-    public String transferenciaExterna(@RequestParam String usuarioId,
-            @RequestParam String origenId,
-            @RequestParam String destinoUsuarioId,
-            @RequestParam String destinoBilleteraId,
-            @RequestParam double monto) {
-        Usuario destinoUsuario = gestor.getUsuario(destinoUsuarioId);
-        if (destinoUsuario == null) {
-            return "redirect:/usuarios/" + usuarioId;
-        }
-        Billetera destino = gestor.getBilletera(destinoBilleteraId);
-        if (destino == null || !destino.getUsuarioId().equals(destinoUsuarioId)) {
-            return "redirect:/usuarios/" + usuarioId;
-        }
-        Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
-                TipoTransaccion.TRANSFERENCIA, monto, origenId, destinoBilleteraId);
-        gestor.procesarTransaccion(t);
-        return "redirect:/usuarios/" + usuarioId;
+        return "redirect:/beneficios/" + usuarioId;
     }
 
     @GetMapping("/rendimiento")
@@ -441,29 +612,31 @@ public class BilleteraController {
         List<Usuario> usuarios = gestor.getTodosUsuarios();
         List<Transaccion> transacciones = gestor.getTodasTransacciones();
 
-        // Comparar busqueda en Lista vs HashMap
         long inicioLista = System.nanoTime();
         for (Usuario u : usuarios) {
             for (Usuario u2 : usuarios) {
-                if (u2.getId().equals(u.getId()))
+                if (u2.getId().equals(u.getId())) {
                     break;
+                }
             }
         }
         long tiempoLista = System.nanoTime() - inicioLista;
 
         long inicioHash = System.nanoTime();
         Map<String, Usuario> mapaUsuarios = new java.util.HashMap<>();
-        for (Usuario u : usuarios)
+        for (Usuario u : usuarios) {
             mapaUsuarios.put(u.getId(), u);
-        for (Usuario u : usuarios)
+        }
+        for (Usuario u : usuarios) {
             mapaUsuarios.get(u.getId());
+        }
         long tiempoHash = System.nanoTime() - inicioHash;
 
-        // Comparar insercion en Lista vs Arbol BST
         long inicioBST = System.nanoTime();
         ArbolFidelizacion arbolTemp = new ArbolFidelizacion();
-        for (Usuario u : usuarios)
+        for (Usuario u : usuarios) {
             arbolTemp.insertar(u);
+        }
         arbolTemp.getOrdenadoPorPuntos();
         long tiempoBST = System.nanoTime() - inicioBST;
 
@@ -472,24 +645,28 @@ public class BilleteraController {
         listaTemp.sort((a, b) -> Integer.compare(a.getPuntosTotales(), b.getPuntosTotales()));
         long tiempoListaSort = System.nanoTime() - inicioListaSort;
 
-        // Comparar Pila vs Cola
         long inicioPila = System.nanoTime();
         PilaReversiones pilaTemp = new PilaReversiones();
-        for (Transaccion t : transacciones)
+        for (Transaccion t : transacciones) {
             pilaTemp.push(t);
-        while (!pilaTemp.estaVacia())
+        }
+        while (!pilaTemp.estaVacia()) {
             pilaTemp.pop();
+        }
         long tiempoPila = System.nanoTime() - inicioPila;
 
         long inicioCola = System.nanoTime();
         ColaNotificaciones colaTemp = new ColaNotificaciones();
         for (Transaccion t : transacciones) {
-            colaTemp.encolar(new com.fintech.billetera.modelos.Alerta(
-                    t.getId(), com.fintech.billetera.modelos.TipoAlerta.SALDO_BAJO,
-                    "test", "u1"));
+            colaTemp.encolar(new Alerta(
+                    t.getId(),
+                    TipoAlerta.SALDO_BAJO,
+                    "test",
+                    "u1"));
         }
-        while (!colaTemp.estaVacia())
+        while (!colaTemp.estaVacia()) {
             colaTemp.despachar();
+        }
         long tiempoCola = System.nanoTime() - inicioCola;
 
         model.addAttribute("tiempoLista", tiempoLista);
