@@ -19,38 +19,92 @@
 
         .navbar {
             background: #ffffff;
-            padding: 16px 40px;
+            padding: 14px 40px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
+            gap: 52px;
             border-bottom: 1px solid #e5e7eb;
             position: sticky;
             top: 0;
-            z-index: 50;
+            z-index: 100;
             box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
         }
 
-        .navbar h1 {
+        .brand {
             color: #2563eb;
+            text-decoration: none;
+            font-size: 23px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .brand:hover {
+            color: #1d4ed8;
+        }
+
+        .brand-icon {
             font-size: 22px;
+            line-height: 1;
+        }
+
+        .menu-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .menu-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(37, 99, 235, 0.16);
+        }
+
+        .menu-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 48px;
+            background: #ffffff;
+            min-width: 220px;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            box-shadow: 0 18px 35px rgba(15, 23, 42, 0.14);
+            padding: 8px;
+            z-index: 200;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            color: #475569;
+            text-decoration: none;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 14px;
             font-weight: 800;
         }
 
-        .navbar div {
-            display: flex;
-            gap: 22px;
-        }
-
-        .navbar a {
-            color: #64748b;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .navbar a:hover {
+        .dropdown-menu a:hover {
+            background: #eff6ff;
             color: #2563eb;
         }
+
 
         .toast-center {
             position: fixed;
@@ -678,9 +732,17 @@
         @media (max-width: 650px) {
             .navbar {
                 padding: 14px 20px;
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
+                gap: 18px;
+                justify-content: space-between;
+            }
+
+            .brand {
+                font-size: 20px;
+            }
+
+            .dropdown-menu {
+                right: 0;
+                min-width: 190px;
             }
 
             .container {
@@ -735,10 +797,21 @@
 </div>
 
 <nav class="navbar">
-    <h1>💳 FintechWallet</h1>
-    <div>
-        <a href="/">Inicio</a>
-        <a href="/analitica">Analítica</a>
+    <a href="/" class="brand">
+        <span class="brand-icon">💳</span>
+        <span>FintechWallet</span>
+    </a>
+
+    <div class="menu-wrapper">
+        <button type="button" class="menu-btn" onclick="toggleMenu(event)">
+            ☰ Menú
+        </button>
+
+        <div id="dropdownMenu" class="dropdown-menu">
+            <a href="/">🏠 Inicio</a>
+            <a href="/analitica">📊 Analítica</a>
+            <a href="/rendimiento">⚡ Rendimiento</a>
+        </div>
     </div>
 </nav>
 
@@ -1191,6 +1264,23 @@
 </div>
 
 <script>
+    function toggleMenu(event) {
+        event.stopPropagation();
+        const menu = document.getElementById('dropdownMenu');
+        if (menu) {
+            menu.classList.toggle('show');
+        }
+    }
+
+    document.addEventListener('click', function(event) {
+        const menu = document.getElementById('dropdownMenu');
+        const wrapper = document.querySelector('.menu-wrapper');
+
+        if (menu && wrapper && !wrapper.contains(event.target)) {
+            menu.classList.remove('show');
+        }
+    });
+
     function showAction(actionId, button) {
         const defaultForm = document.getElementById('default-form');
 
