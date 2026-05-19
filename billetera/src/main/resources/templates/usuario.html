@@ -1072,7 +1072,9 @@
 
                 <div id="externa" class="action-form">
                     <h3>Transferir a otro usuario</h3>
-                    <p class="section-subtitle">Tu billetera origen se selecciona de tus billeteras. El destino se indica con ID.</p>
+                    <p class="section-subtitle">
+                        Escribe el ID del usuario destino y el sistema cargará sus billeteras automáticamente.
+                    </p>
 
                     <form th:action="@{/transaccion/transferencia-externa}" method="post">
                         <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
@@ -1092,12 +1094,22 @@
 
                             <div class="form-group">
                                 <label>ID usuario destino</label>
-                                <input type="text" name="destinoUsuarioId" placeholder="U002" required/>
+                                <input type="text"
+                                       id="destinoUsuarioIdInput"
+                                       name="destinoUsuarioId"
+                                       placeholder="Ej: U002"
+                                       autocomplete="off"
+                                       required/>
+                                <small id="estadoCargaBilleteras" style="color:#64748b;font-weight:700;margin-top:4px;">
+                                    Escribe el ID para buscar sus billeteras.
+                                </small>
                             </div>
 
                             <div class="form-group">
-                                <label>ID billetera destino</label>
-                                <input type="text" name="destinoBilleteraId" placeholder="Billetera del usuario destino" required/>
+                                <label>Billetera destino</label>
+                                <select id="destinoBilleteraSelect" name="destinoBilleteraId" required disabled>
+                                    <option value="">Primero escribe el ID del usuario destino</option>
+                                </select>
                             </div>
 
                             <div class="form-group">
@@ -1311,7 +1323,116 @@
         }
     }
 
+
+    let temporizadorBusquedaBilleteras = null;
+
+    function limpiarBilleterasDestino(mensaje) {
+        const select = document.getElementById('destinoBilleteraSelect');
+        const estado = document.getElementById('estadoCargaBilleteras');
+
+        if (!select) {
+            return;
+        }
+
+        select.innerHTML = '';
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = mensaje;
+        select.appendChild(option);
+        select.disabled = true;
+
+        if (estado) {
+            estado.textContent = mensaje;
+            estado.style.color = '#64748b';
+        }
+    }
+
+    function cargarBilleterasDestino(usuarioId) {
+        const select = document.getElementById('destinoBilleteraSelect');
+        const estado = document.getElementById('estadoCargaBilleteras');
+
+        if (!select || !estado) {
+            return;
+        }
+
+        if (!usuarioId || usuarioId.trim().length === 0) {
+            limpiarBilleterasDestino('Escribe el ID para buscar sus billeteras.');
+            return;
+        }
+
+        estado.textContent = 'Buscando billeteras...';
+        estado.style.color = '#64748b';
+        select.disabled = true;
+
+        fetch('/api/usuarios/' + encodeURIComponent(usuarioId.trim()) + '/billeteras')
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('No se pudo consultar el usuario');
+                }
+                return response.json();
+            })
+            .then(function(billeteras) {
+                select.innerHTML = '';
+
+                if (!billeteras || billeteras.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'Este usuario no tiene billeteras';
+                    select.appendChild(option);
+                    select.disabled = true;
+
+                    estado.textContent = 'Este usuario no tiene billeteras disponibles.';
+                    estado.style.color = '#dc2626';
+                    return;
+                }
+
+                const primeraOpcion = document.createElement('option');
+                primeraOpcion.value = '';
+                primeraOpcion.textContent = 'Selecciona billetera destino';
+                select.appendChild(primeraOpcion);
+
+                billeteras.forEach(function(b) {
+                    const option = document.createElement('option');
+                    option.value = b.id;
+
+                    const saldo = new Intl.NumberFormat('es-CO').format(b.saldo);
+                    option.textContent = b.nombre + ' - ' + b.tipo + ' - $' + saldo;
+
+                    select.appendChild(option);
+                });
+
+                select.disabled = false;
+                estado.textContent = billeteras.length + ' billetera(s) encontrada(s).';
+                estado.style.color = '#16a34a';
+            })
+            .catch(function() {
+                limpiarBilleterasDestino('No se encontraron billeteras para ese usuario.');
+                if (estado) {
+                    estado.style.color = '#dc2626';
+                }
+            });
+    }
+
+    function prepararCargaBilleterasDestino() {
+        const input = document.getElementById('destinoUsuarioIdInput');
+
+        if (!input) {
+            return;
+        }
+
+        input.addEventListener('input', function() {
+            clearTimeout(temporizadorBusquedaBilleteras);
+
+            temporizadorBusquedaBilleteras = setTimeout(function() {
+                cargarBilleterasDestino(input.value);
+            }, 400);
+        });
+    }
+
+
     document.addEventListener("DOMContentLoaded", function () {
+        prepararCargaBilleterasDestino();
+
         const toasts = document.querySelectorAll(".toast-center");
 
         toasts.forEach(function (toast) {

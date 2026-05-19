@@ -3,7 +3,7 @@ package com.fintech.billetera.controladores;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -36,6 +36,7 @@ private boolean billeteraPerteneceAUsuario(Billetera billetera, String usuarioId
     @Autowired
     private GestorOperaciones gestor;
 
+    
     @GetMapping("/")
     public String inicio(Model model) {
         model.addAttribute("usuarios", gestor.getTodosUsuarios());
@@ -80,7 +81,32 @@ public String crearBilletera(@RequestParam String nombre,
 
     return "redirect:/usuarios/" + usuarioId;
 }
+@GetMapping("/api/usuarios/{usuarioId}/billeteras")
+@ResponseBody
+public List<Map<String, Object>> obtenerBilleterasPorUsuario(@PathVariable String usuarioId) {
+    List<Map<String, Object>> respuesta = new ArrayList<>();
 
+    Usuario usuario = gestor.getUsuario(usuarioId);
+
+    if (usuario == null) {
+        return respuesta;
+    }
+
+    List<Billetera> billeteras = gestor.getBilleterasDeUsuario(usuarioId);
+
+    for (Billetera b : billeteras) {
+        Map<String, Object> item = new java.util.HashMap<>();
+
+        item.put("id", b.getId());
+        item.put("nombre", b.getNombre());
+        item.put("tipo", b.getTipo().name());
+        item.put("saldo", b.getSaldo());
+
+        respuesta.add(item);
+    }
+
+    return respuesta;
+}
     @GetMapping("/usuarios/{id}")
     public String verUsuario(@PathVariable String id, Model model) {
         Usuario u = gestor.getUsuario(id);
