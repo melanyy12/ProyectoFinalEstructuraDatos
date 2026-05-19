@@ -29,85 +29,7 @@
             z-index: 50;
             box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
         }
-      .toast-center {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    width: 260px;
-    min-height: 190px;
-    transform: translate(-50%, -50%);
-    z-index: 9999;
 
-    background: #ffffff;
-    border-radius: 22px;
-    padding: 26px 22px;
-    text-align: center;
-
-    box-shadow: 0 25px 60px rgba(15, 23, 42, 0.25);
-    border: 1px solid #e5e7eb;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    animation: showToastBox 0.25s ease;
-}
-
-.toast-icon {
-    width: 58px;
-    height: 58px;
-    border-radius: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    font-size: 30px;
-    font-weight: 900;
-    margin-bottom: 14px;
-}
-
-.toast-title {
-    font-size: 18px;
-    font-weight: 900;
-    color: #0f172a;
-    margin-bottom: 6px;
-}
-
-.toast-message {
-    font-size: 14px;
-    color: #64748b;
-    font-weight: 700;
-    line-height: 1.4;
-}
-
-.toast-success .toast-icon {
-    background: #dcfce7;
-    color: #16a34a;
-}
-
-.toast-error .toast-icon {
-    background: #fee2e2;
-    color: #dc2626;
-}
-
-.toast-center.hide {
-    opacity: 0;
-    transform: translate(-50%, -55%) scale(0.96);
-    transition: all 0.25s ease;
-}
-
-@keyframes showToastBox {
-    from {
-        opacity: 0;
-        transform: translate(-50%, -45%) scale(0.95);
-    }
-
-    to {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-    }
-}
         .navbar h1 {
             color: #2563eb;
             font-size: 22px;
@@ -128,6 +50,80 @@
 
         .navbar a:hover {
             color: #2563eb;
+        }
+
+        .toast-center {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 260px;
+            min-height: 190px;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            background: #ffffff;
+            border-radius: 22px;
+            padding: 26px 22px;
+            text-align: center;
+            box-shadow: 0 25px 60px rgba(15, 23, 42, 0.25);
+            border: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: showToastBox 0.25s ease;
+        }
+
+        .toast-icon {
+            width: 58px;
+            height: 58px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            font-weight: 900;
+            margin-bottom: 14px;
+        }
+
+        .toast-title {
+            font-size: 18px;
+            font-weight: 900;
+            color: #0f172a;
+            margin-bottom: 6px;
+        }
+
+        .toast-message {
+            font-size: 14px;
+            color: #64748b;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+
+        .toast-success .toast-icon {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .toast-error .toast-icon {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .toast-center.hide {
+            opacity: 0;
+            transform: translate(-50%, -55%) scale(0.96);
+            transition: all 0.25s ease;
+        }
+
+        @keyframes showToastBox {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -45%) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
         }
 
         .container {
@@ -574,7 +570,6 @@
             font-size: 14px;
         }
 
-
         .movimientos-scroll {
             max-height: 430px;
             overflow-y: auto;
@@ -738,6 +733,7 @@
         Ocurrió un error
     </div>
 </div>
+
 <nav class="navbar">
     <h1>💳 FintechWallet</h1>
     <div>
@@ -780,13 +776,13 @@
         <div>
             <div class="section">
                 <h3>Mis billeteras</h3>
-                <p class="section-subtitle">Selecciona una billetera por ID para operar.</p>
+                <p class="section-subtitle">Tus billeteras disponibles para operar.</p>
 
                 <div th:if="${not #lists.isEmpty(usuario.billeteras)}" class="wallet-list">
                     <div th:each="billetera : ${usuario.billeteras}" class="billetera-card">
                         <h4 th:text="${billetera.nombre}">Nombre</h4>
                         <p th:text="${billetera.tipo}">Tipo</p>
-                        <p th:text="'ID: ' + ${billetera.id}">ID</p>
+                        <p th:text="'ID interno: ' + ${billetera.id}">ID</p>
                         <span class="saldo"
                               th:text="'$' + ${#numbers.formatDecimal(billetera.saldo,0,'COMMA',0,'POINT')}">
                             $0
@@ -801,15 +797,10 @@
 
             <div class="section">
                 <h3>Crear billetera</h3>
-                <p class="section-subtitle">Agrega una nueva billetera al usuario.</p>
+                <p class="section-subtitle">El sistema genera el ID automáticamente.</p>
 
                 <form th:action="@{/billetera/crear}" method="post">
                     <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
-
-                    <div class="form-group">
-                        <label>ID billetera</label>
-                        <input type="text" name="id" placeholder="B001" required/>
-                    </div>
 
                     <div class="form-group">
                         <label>Nombre</label>
@@ -850,7 +841,7 @@
         <div class="actions-panel">
             <div class="actions-header">
                 <h3>¿Qué quieres hacer?</h3>
-                <p>Elige una opción y solo se mostrará el formulario que necesitas.</p>
+                <p>Elige una opción y solo se mostrará el formulario o información que necesitas.</p>
             </div>
 
             <div class="quick-actions">
@@ -869,7 +860,7 @@
                 <button type="button" class="action-btn" onclick="showAction('transferir', this)">
                     <div class="action-icon">↔️</div>
                     <strong>Transferir</strong>
-                    <span>Entre billeteras</span>
+                    <span>Entre mis billeteras</span>
                 </button>
 
                 <button type="button" class="action-btn" onclick="showAction('externa', this)">
@@ -901,25 +892,32 @@
                 <div id="default-form" class="default-message">
                     <div>💳</div>
                     <strong>Selecciona una acción</strong>
-                    <p>Como en una billetera digital, primero eliges qué quieres hacer y luego llenas los datos.</p>
+                    <p>Primero eliges qué quieres hacer y luego llenas solo los datos necesarios.</p>
                 </div>
 
                 <div id="recargar" class="action-form">
                     <h3>Recargar billetera</h3>
-                    <p class="section-subtitle">Agrega saldo a una de tus billeteras.</p>
+                    <p class="section-subtitle">Elige una de tus billeteras y agrega saldo.</p>
 
                     <form th:action="@{/transaccion/recarga}" method="post">
                         <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
 
                         <div class="form-grid">
                             <div class="form-group">
-                                <label>ID billetera</label>
-                                <input type="text" name="billeteraId" placeholder="B001" required/>
+                                <label>Billetera</label>
+                                <select name="billeteraId" required>
+                                    <option value="">Selecciona una billetera</option>
+                                    <option th:each="b : ${usuario.billeteras}"
+                                            th:value="${b.id}"
+                                            th:text="${b.nombre + ' - ' + b.tipo + ' - $' + #numbers.formatDecimal(b.saldo,0,'COMMA',0,'POINT')}">
+                                        Billetera
+                                    </option>
+                                </select>
                             </div>
 
                             <div class="form-group">
                                 <label>Monto</label>
-                                <input type="number" name="monto" placeholder="100000" required/>
+                                <input type="number" name="monto" placeholder="100000" min="1" required/>
                             </div>
                         </div>
 
@@ -929,20 +927,27 @@
 
                 <div id="retirar" class="action-form">
                     <h3>Retirar dinero</h3>
-                    <p class="section-subtitle">Retira saldo disponible de una billetera.</p>
+                    <p class="section-subtitle">Elige la billetera desde la que deseas retirar.</p>
 
                     <form th:action="@{/transaccion/retiro}" method="post">
                         <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
 
                         <div class="form-grid">
                             <div class="form-group">
-                                <label>ID billetera</label>
-                                <input type="text" name="billeteraId" placeholder="B001" required/>
+                                <label>Billetera</label>
+                                <select name="billeteraId" required>
+                                    <option value="">Selecciona una billetera</option>
+                                    <option th:each="b : ${usuario.billeteras}"
+                                            th:value="${b.id}"
+                                            th:text="${b.nombre + ' - ' + b.tipo + ' - $' + #numbers.formatDecimal(b.saldo,0,'COMMA',0,'POINT')}">
+                                        Billetera
+                                    </option>
+                                </select>
                             </div>
 
                             <div class="form-group">
                                 <label>Monto</label>
-                                <input type="number" name="monto" placeholder="50000" required/>
+                                <input type="number" name="monto" placeholder="50000" min="1" required/>
                             </div>
                         </div>
 
@@ -951,8 +956,8 @@
                 </div>
 
                 <div id="transferir" class="action-form">
-                    <h3>Transferir entre billeteras</h3>
-                    <p class="section-subtitle">Mueve dinero entre billeteras registradas.</p>
+                    <h3>Transferir entre mis billeteras</h3>
+                    <p class="section-subtitle">Solo aparecen billeteras asociadas a este usuario.</p>
 
                     <form th:action="@{/transaccion/transferencia}" method="post">
                         <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
@@ -960,17 +965,31 @@
                         <div class="form-grid">
                             <div class="form-group">
                                 <label>Billetera origen</label>
-                                <input type="text" name="origenId" placeholder="B001" required/>
+                                <select name="origenId" required>
+                                    <option value="">Selecciona origen</option>
+                                    <option th:each="b : ${usuario.billeteras}"
+                                            th:value="${b.id}"
+                                            th:text="${b.nombre + ' - ' + b.tipo + ' - $' + #numbers.formatDecimal(b.saldo,0,'COMMA',0,'POINT')}">
+                                        Origen
+                                    </option>
+                                </select>
                             </div>
 
                             <div class="form-group">
                                 <label>Billetera destino</label>
-                                <input type="text" name="destinoId" placeholder="B002" required/>
+                                <select name="destinoId" required>
+                                    <option value="">Selecciona destino</option>
+                                    <option th:each="b : ${usuario.billeteras}"
+                                            th:value="${b.id}"
+                                            th:text="${b.nombre + ' - ' + b.tipo + ' - $' + #numbers.formatDecimal(b.saldo,0,'COMMA',0,'POINT')}">
+                                        Destino
+                                    </option>
+                                </select>
                             </div>
 
                             <div class="form-group full">
                                 <label>Monto</label>
-                                <input type="number" name="monto" placeholder="50000" required/>
+                                <input type="number" name="monto" placeholder="50000" min="1" required/>
                             </div>
                         </div>
 
@@ -980,7 +999,7 @@
 
                 <div id="externa" class="action-form">
                     <h3>Transferir a otro usuario</h3>
-                    <p class="section-subtitle">Envía saldo a una billetera de otro usuario.</p>
+                    <p class="section-subtitle">Tu billetera origen se selecciona de tus billeteras. El destino se indica con ID.</p>
 
                     <form th:action="@{/transaccion/transferencia-externa}" method="post">
                         <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
@@ -988,7 +1007,14 @@
                         <div class="form-grid">
                             <div class="form-group">
                                 <label>Mi billetera origen</label>
-                                <input type="text" name="origenId" placeholder="B001" required/>
+                                <select name="origenId" required>
+                                    <option value="">Selecciona mi billetera</option>
+                                    <option th:each="b : ${usuario.billeteras}"
+                                            th:value="${b.id}"
+                                            th:text="${b.nombre + ' - ' + b.tipo + ' - $' + #numbers.formatDecimal(b.saldo,0,'COMMA',0,'POINT')}">
+                                        Billetera
+                                    </option>
+                                </select>
                             </div>
 
                             <div class="form-group">
@@ -997,13 +1023,13 @@
                             </div>
 
                             <div class="form-group">
-                                <label>Billetera destino</label>
-                                <input type="text" name="destinoBilleteraId" placeholder="B003" required/>
+                                <label>ID billetera destino</label>
+                                <input type="text" name="destinoBilleteraId" placeholder="Billetera del usuario destino" required/>
                             </div>
 
                             <div class="form-group">
                                 <label>Monto</label>
-                                <input type="number" name="monto" placeholder="50000" required/>
+                                <input type="number" name="monto" placeholder="50000" min="1" required/>
                             </div>
                         </div>
 
@@ -1013,7 +1039,7 @@
 
                 <div id="programar" class="action-form">
                     <h3>Programar transacción</h3>
-                    <p class="section-subtitle">Agenda una operación para ejecutarse después.</p>
+                    <p class="section-subtitle">Agenda una transferencia entre tus billeteras.</p>
 
                     <form th:action="@{/transaccion/programar}" method="post">
                         <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
@@ -1021,17 +1047,31 @@
                         <div class="form-grid">
                             <div class="form-group">
                                 <label>Billetera origen</label>
-                                <input type="text" name="origenId" placeholder="B001" required/>
+                                <select name="origenId" required>
+                                    <option value="">Selecciona origen</option>
+                                    <option th:each="b : ${usuario.billeteras}"
+                                            th:value="${b.id}"
+                                            th:text="${b.nombre + ' - ' + b.tipo + ' - $' + #numbers.formatDecimal(b.saldo,0,'COMMA',0,'POINT')}">
+                                        Origen
+                                    </option>
+                                </select>
                             </div>
 
                             <div class="form-group">
                                 <label>Billetera destino</label>
-                                <input type="text" name="destinoId" placeholder="B002" required/>
+                                <select name="destinoId" required>
+                                    <option value="">Selecciona destino</option>
+                                    <option th:each="b : ${usuario.billeteras}"
+                                            th:value="${b.id}"
+                                            th:text="${b.nombre + ' - ' + b.tipo + ' - $' + #numbers.formatDecimal(b.saldo,0,'COMMA',0,'POINT')}">
+                                        Destino
+                                    </option>
+                                </select>
                             </div>
 
                             <div class="form-group">
                                 <label>Monto</label>
-                                <input type="number" name="monto" placeholder="50000" required/>
+                                <input type="number" name="monto" placeholder="50000" min="1" required/>
                             </div>
 
                             <div class="form-group">
@@ -1083,6 +1123,7 @@
                             Eliminar usuario
                         </button>
                     </form>
+                </div>
 
                 <div id="movimientos" class="action-form">
                     <h3>Movimientos del usuario</h3>
@@ -1143,7 +1184,6 @@
                     <p th:if="${#lists.isEmpty(historial)}" class="empty">
                         Este usuario todavía no tiene movimientos registrados.
                     </p>
-                </div>
                 </div>
             </div>
         </div>
