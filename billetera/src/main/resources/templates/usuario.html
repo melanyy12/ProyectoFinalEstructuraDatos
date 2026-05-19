@@ -574,6 +574,91 @@
             font-size: 14px;
         }
 
+
+        .movimientos-scroll {
+            max-height: 430px;
+            overflow-y: auto;
+            overflow-x: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+        }
+
+        .movimientos-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 650px;
+            background: #ffffff;
+        }
+
+        .movimientos-table th {
+            text-align: left;
+            padding: 13px 14px;
+            color: #64748b;
+            font-size: 12px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f8fafc;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .movimientos-table td {
+            padding: 14px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+            color: #475569;
+            white-space: nowrap;
+        }
+
+        .movimientos-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .movimiento-monto {
+            color: #0f172a;
+            font-weight: 900;
+        }
+
+        .tipo-RECARGA {
+            color: #16a34a;
+            font-weight: 900;
+        }
+
+        .tipo-RETIRO {
+            color: #dc2626;
+            font-weight: 900;
+        }
+
+        .tipo-TRANSFERENCIA,
+        .tipo-PAGO_PROGRAMADO {
+            color: #2563eb;
+            font-weight: 900;
+        }
+
+        .estado-pill {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .estado-completada {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .estado-rechazada {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .estado-revertida {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -804,6 +889,12 @@
                     <strong>Editar usuario</strong>
                     <span>Datos básicos</span>
                 </button>
+
+                <button type="button" class="action-btn" onclick="showAction('movimientos', this)">
+                    <div class="action-icon">📋</div>
+                    <strong>Ver movimientos</strong>
+                    <span>Historial del usuario</span>
+                </button>
             </div>
 
             <div class="forms-area">
@@ -992,6 +1083,67 @@
                             Eliminar usuario
                         </button>
                     </form>
+
+                <div id="movimientos" class="action-form">
+                    <h3>Movimientos del usuario</h3>
+                    <p class="section-subtitle">
+                        Historial propio de recargas, retiros, transferencias y operaciones rechazadas.
+                    </p>
+
+                    <div th:if="${not #lists.isEmpty(historial)}" class="movimientos-scroll">
+                        <table class="movimientos-table">
+                            <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th>Monto</th>
+                                <th>Estado</th>
+                                <th>Riesgo</th>
+                            </tr>
+                            </thead>
+
+                            <tbody>
+                            <tr th:each="txn : ${historial}">
+                                <td th:text="${#dates.format(txn.fecha, 'dd/MM/yyyy HH:mm:ss')}">
+                                    Fecha
+                                </td>
+
+                                <td>
+                                    <span th:class="'tipo-' + ${txn.tipo.name()}"
+                                          th:text="${txn.tipo}">
+                                        TIPO
+                                    </span>
+                                </td>
+
+                                <td class="movimiento-monto"
+                                    th:text="'$' + ${#numbers.formatDecimal(txn.valor, 0, 'COMMA', 0, 'POINT')}">
+                                    $0
+                                </td>
+
+                                <td>
+                                    <span class="estado-pill"
+                                          th:classappend="${txn.estado.name() == 'RECHAZADA' ? 'estado-rechazada' : (txn.estado.name() == 'REVERTIDA' ? 'estado-revertida' : 'estado-completada')}"
+                                          th:text="${txn.estado}">
+                                        ESTADO
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="estado-pill"
+                                          th:classappend="${txn.nivelRiesgo != null && txn.nivelRiesgo.name() == 'ALTO' ? 'estado-rechazada' : (txn.nivelRiesgo != null && txn.nivelRiesgo.name() == 'MEDIO' ? 'estado-revertida' : 'estado-completada')}"
+                                          th:text="${txn.nivelRiesgo != null ? txn.nivelRiesgo : 'BAJO'}">
+                                        BAJO
+                                    </span>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p th:if="${#lists.isEmpty(historial)}" class="empty">
+                        Este usuario todavía no tiene movimientos registrados.
+                    </p>
+                </div>
                 </div>
             </div>
         </div>
@@ -1000,7 +1152,11 @@
 
 <script>
     function showAction(actionId, button) {
-        document.getElementById('default-form').style.display = 'none';
+        const defaultForm = document.getElementById('default-form');
+
+        if (defaultForm) {
+            defaultForm.style.display = 'none';
+        }
 
         document.querySelectorAll('.action-form').forEach(function(form) {
             form.classList.remove('active');
@@ -1010,8 +1166,19 @@
             btn.classList.remove('active');
         });
 
-        document.getElementById(actionId).classList.add('active');
-        button.classList.add('active');
+        const selectedForm = document.getElementById(actionId);
+
+        if (selectedForm) {
+            selectedForm.classList.add('active');
+            button.classList.add('active');
+
+            setTimeout(function () {
+                selectedForm.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }, 120);
+        }
     }
 
     document.addEventListener("DOMContentLoaded", function () {
