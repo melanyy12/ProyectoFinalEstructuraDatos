@@ -1,6 +1,7 @@
 package com.fintech.billetera.controladores;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -28,15 +29,15 @@ import com.fintech.billetera.servicios.GestorOperaciones;
 
 @Controller
 public class BilleteraController {
-private boolean billeteraPerteneceAUsuario(Billetera billetera, String usuarioId) {
-    return billetera != null
-            && usuarioId != null
-            && usuarioId.equals(billetera.getUsuarioId());
-}
+    private boolean billeteraPerteneceAUsuario(Billetera billetera, String usuarioId) {
+        return billetera != null
+                && usuarioId != null
+                && usuarioId.equals(billetera.getUsuarioId());
+    }
+
     @Autowired
     private GestorOperaciones gestor;
 
-    
     @GetMapping("/")
     public String inicio(Model model) {
         model.addAttribute("usuarios", gestor.getTodosUsuarios());
@@ -61,52 +62,53 @@ private boolean billeteraPerteneceAUsuario(Billetera billetera, String usuarioId
         return "redirect:/";
     }
 
-   @PostMapping("/billetera/crear")
-public String crearBilletera(@RequestParam String nombre,
-        @RequestParam String tipo,
-        @RequestParam String usuarioId,
-        org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+    @PostMapping("/billetera/crear")
+    public String crearBilletera(@RequestParam String nombre,
+            @RequestParam String tipo,
+            @RequestParam String usuarioId,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
 
-    String idGenerado = "B" + System.currentTimeMillis();
+        String idGenerado = "B" + System.currentTimeMillis();
 
-    Billetera b = new Billetera(
-            idGenerado,
-            nombre,
-            TipoBilletera.valueOf(tipo),
-            usuarioId
-    );
+        Billetera b = new Billetera(
+                idGenerado,
+                nombre,
+                TipoBilletera.valueOf(tipo),
+                usuarioId);
 
-    gestor.registrarBilletera(b);
-    attrs.addFlashAttribute("toast", "Billetera creada correctamente");
+        gestor.registrarBilletera(b);
+        attrs.addFlashAttribute("toast", "Billetera creada correctamente");
 
-    return "redirect:/usuarios/" + usuarioId;
-}
-@GetMapping("/api/usuarios/{usuarioId}/billeteras")
-@ResponseBody
-public List<Map<String, Object>> obtenerBilleterasPorUsuario(@PathVariable String usuarioId) {
-    List<Map<String, Object>> respuesta = new ArrayList<>();
+        return "redirect:/usuarios/" + usuarioId;
+    }
 
-    Usuario usuario = gestor.getUsuario(usuarioId);
+    @GetMapping("/api/usuarios/{usuarioId}/billeteras")
+    @ResponseBody
+    public List<Map<String, Object>> obtenerBilleterasPorUsuario(@PathVariable String usuarioId) {
+        List<Map<String, Object>> respuesta = new ArrayList<>();
 
-    if (usuario == null) {
+        Usuario usuario = gestor.getUsuario(usuarioId);
+
+        if (usuario == null) {
+            return respuesta;
+        }
+
+        List<Billetera> billeteras = gestor.getBilleterasDeUsuario(usuarioId);
+
+        for (Billetera b : billeteras) {
+            Map<String, Object> item = new java.util.HashMap<>();
+
+            item.put("id", b.getId());
+            item.put("nombre", b.getNombre());
+            item.put("tipo", b.getTipo().name());
+            item.put("saldo", b.getSaldo());
+
+            respuesta.add(item);
+        }
+
         return respuesta;
     }
 
-    List<Billetera> billeteras = gestor.getBilleterasDeUsuario(usuarioId);
-
-    for (Billetera b : billeteras) {
-        Map<String, Object> item = new java.util.HashMap<>();
-
-        item.put("id", b.getId());
-        item.put("nombre", b.getNombre());
-        item.put("tipo", b.getTipo().name());
-        item.put("saldo", b.getSaldo());
-
-        respuesta.add(item);
-    }
-
-    return respuesta;
-}
     @GetMapping("/usuarios/{id}")
     public String verUsuario(@PathVariable String id, Model model) {
         Usuario u = gestor.getUsuario(id);
@@ -125,160 +127,163 @@ public List<Map<String, Object>> obtenerBilleterasPorUsuario(@PathVariable Strin
         return "usuario";
     }
 
-   @PostMapping("/transaccion/recarga")
-public String recargar(@RequestParam String billeteraId,
-        @RequestParam double monto,
-        @RequestParam String usuarioId,
-        org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+    @PostMapping("/transaccion/recarga")
+    public String recargar(@RequestParam String billeteraId,
+            @RequestParam double monto,
+            @RequestParam String usuarioId,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
 
-    Billetera billetera = gestor.getBilletera(billeteraId);
+        Billetera billetera = gestor.getBilletera(billeteraId);
 
-    if (billetera == null) {
-        attrs.addFlashAttribute("toastError", "No existe la billetera con ID: " + billeteraId);
+        if (billetera == null) {
+            attrs.addFlashAttribute("toastError", "No existe la billetera con ID: " + billeteraId);
+            return "redirect:/usuarios/" + usuarioId;
+        }
+
+        if (!billeteraPerteneceAUsuario(billetera, usuarioId)) {
+            attrs.addFlashAttribute("toastError", "Esa billetera no pertenece a este usuario");
+            return "redirect:/usuarios/" + usuarioId;
+        }
+
+        Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
+                TipoTransaccion.RECARGA, monto, null, billeteraId);
+
+        boolean exito = gestor.procesarTransaccion(t);
+
+        if (exito && t.getEstado() != EstadoTransaccion.RECHAZADA) {
+            attrs.addFlashAttribute("toast", "Recarga realizada correctamente");
+        } else {
+            attrs.addFlashAttribute("toastError", "La recarga fue rechazada");
+        }
+
         return "redirect:/usuarios/" + usuarioId;
     }
 
-    if (!billeteraPerteneceAUsuario(billetera, usuarioId)) {
-        attrs.addFlashAttribute("toastError", "Esa billetera no pertenece a este usuario");
+    @PostMapping("/transaccion/retiro")
+    public String retirar(@RequestParam String billeteraId,
+            @RequestParam double monto,
+            @RequestParam String usuarioId,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+
+        Billetera billetera = gestor.getBilletera(billeteraId);
+
+        if (billetera == null) {
+            attrs.addFlashAttribute("toastError", "No existe la billetera con ID: " + billeteraId);
+            return "redirect:/usuarios/" + usuarioId;
+        }
+
+        if (!billeteraPerteneceAUsuario(billetera, usuarioId)) {
+            attrs.addFlashAttribute("toastError", "No puedes retirar de una billetera que no pertenece a este usuario");
+            return "redirect:/usuarios/" + usuarioId;
+        }
+
+        Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
+                TipoTransaccion.RETIRO, monto, billeteraId, null);
+
+        boolean exito = gestor.procesarTransaccion(t);
+
+        if (exito && t.getEstado() != EstadoTransaccion.RECHAZADA) {
+            attrs.addFlashAttribute("toast", "Retiro realizado correctamente");
+        } else {
+            attrs.addFlashAttribute("toastError", "Retiro rechazado: saldo insuficiente");
+        }
+
         return "redirect:/usuarios/" + usuarioId;
     }
 
-    Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
-            TipoTransaccion.RECARGA, monto, null, billeteraId);
+    @PostMapping("/transaccion/transferencia")
+    public String transferir(@RequestParam String origenId,
+            @RequestParam String destinoId,
+            @RequestParam double monto,
+            @RequestParam String usuarioId,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
 
-    boolean exito = gestor.procesarTransaccion(t);
+        Billetera origen = gestor.getBilletera(origenId);
+        Billetera destino = gestor.getBilletera(destinoId);
 
-    if (exito && t.getEstado() != EstadoTransaccion.RECHAZADA) {
-        attrs.addFlashAttribute("toast", "Recarga realizada correctamente");
-    } else {
-        attrs.addFlashAttribute("toastError", "La recarga fue rechazada");
-    }
+        if (origen == null) {
+            attrs.addFlashAttribute("toastError", "No existe la billetera origen con ID: " + origenId);
+            return "redirect:/usuarios/" + usuarioId;
+        }
 
-    return "redirect:/usuarios/" + usuarioId;
-}
+        if (destino == null) {
+            attrs.addFlashAttribute("toastError", "No existe la billetera destino con ID: " + destinoId);
+            return "redirect:/usuarios/" + usuarioId;
+        }
 
-   @PostMapping("/transaccion/retiro")
-public String retirar(@RequestParam String billeteraId,
-        @RequestParam double monto,
-        @RequestParam String usuarioId,
-        org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+        if (!billeteraPerteneceAUsuario(origen, usuarioId)) {
+            attrs.addFlashAttribute("toastError", "La billetera origen no pertenece a este usuario");
+            return "redirect:/usuarios/" + usuarioId;
+        }
 
-    Billetera billetera = gestor.getBilletera(billeteraId);
+        if (!billeteraPerteneceAUsuario(destino, usuarioId)) {
+            attrs.addFlashAttribute("toastError",
+                    "Para transferir entre billeteras, la billetera destino también debe ser de este usuario");
+            return "redirect:/usuarios/" + usuarioId;
+        }
 
-    if (billetera == null) {
-        attrs.addFlashAttribute("toastError", "No existe la billetera con ID: " + billeteraId);
+        Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
+                TipoTransaccion.TRANSFERENCIA, monto, origenId, destinoId);
+
+        boolean exito = gestor.procesarTransaccion(t);
+
+        if (exito && t.getEstado() != EstadoTransaccion.RECHAZADA) {
+            attrs.addFlashAttribute("toast", "Transferencia realizada correctamente");
+        } else {
+            attrs.addFlashAttribute("toastError", "Transferencia rechazada: saldo insuficiente");
+        }
+
         return "redirect:/usuarios/" + usuarioId;
     }
 
-    if (!billeteraPerteneceAUsuario(billetera, usuarioId)) {
-        attrs.addFlashAttribute("toastError", "No puedes retirar de una billetera que no pertenece a este usuario");
+    @PostMapping("/transaccion/transferencia-externa")
+    public String transferenciaExterna(@RequestParam String usuarioId,
+            @RequestParam String origenId,
+            @RequestParam String destinoUsuarioId,
+            @RequestParam String destinoBilleteraId,
+            @RequestParam double monto,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+
+        Usuario destinoUsuario = gestor.getUsuario(destinoUsuarioId);
+
+        if (destinoUsuario == null) {
+            attrs.addFlashAttribute("toastError", "No existe el usuario destino con ID: " + destinoUsuarioId);
+            return "redirect:/usuarios/" + usuarioId;
+        }
+
+        Billetera origen = gestor.getBilletera(origenId);
+
+        if (origen == null) {
+            attrs.addFlashAttribute("toastError", "No existe la billetera origen con ID: " + origenId);
+            return "redirect:/usuarios/" + usuarioId;
+        }
+
+        if (!billeteraPerteneceAUsuario(origen, usuarioId)) {
+            attrs.addFlashAttribute("toastError", "La billetera origen no pertenece a este usuario");
+            return "redirect:/usuarios/" + usuarioId;
+        }
+
+        Billetera destino = gestor.getBilletera(destinoBilleteraId);
+
+        if (destino == null || !destino.getUsuarioId().equals(destinoUsuarioId)) {
+            attrs.addFlashAttribute("toastError", "La billetera destino no pertenece al usuario indicado");
+            return "redirect:/usuarios/" + usuarioId;
+        }
+
+        Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
+                TipoTransaccion.TRANSFERENCIA, monto, origenId, destinoBilleteraId);
+
+        boolean exito = gestor.procesarTransaccion(t);
+
+        if (exito && t.getEstado() != EstadoTransaccion.RECHAZADA) {
+            attrs.addFlashAttribute("toast", "Transferencia externa realizada correctamente");
+        } else {
+            attrs.addFlashAttribute("toastError", "Transferencia externa rechazada: saldo insuficiente");
+        }
+
         return "redirect:/usuarios/" + usuarioId;
     }
 
-    Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
-            TipoTransaccion.RETIRO, monto, billeteraId, null);
-
-    boolean exito = gestor.procesarTransaccion(t);
-
-    if (exito && t.getEstado() != EstadoTransaccion.RECHAZADA) {
-        attrs.addFlashAttribute("toast", "Retiro realizado correctamente");
-    } else {
-        attrs.addFlashAttribute("toastError", "Retiro rechazado: saldo insuficiente");
-    }
-
-    return "redirect:/usuarios/" + usuarioId;
-}
-
-   @PostMapping("/transaccion/transferencia")
-public String transferir(@RequestParam String origenId,
-        @RequestParam String destinoId,
-        @RequestParam double monto,
-        @RequestParam String usuarioId,
-        org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
-
-    Billetera origen = gestor.getBilletera(origenId);
-    Billetera destino = gestor.getBilletera(destinoId);
-
-    if (origen == null) {
-        attrs.addFlashAttribute("toastError", "No existe la billetera origen con ID: " + origenId);
-        return "redirect:/usuarios/" + usuarioId;
-    }
-
-    if (destino == null) {
-        attrs.addFlashAttribute("toastError", "No existe la billetera destino con ID: " + destinoId);
-        return "redirect:/usuarios/" + usuarioId;
-    }
-
-    if (!billeteraPerteneceAUsuario(origen, usuarioId)) {
-        attrs.addFlashAttribute("toastError", "La billetera origen no pertenece a este usuario");
-        return "redirect:/usuarios/" + usuarioId;
-    }
-
-    if (!billeteraPerteneceAUsuario(destino, usuarioId)) {
-        attrs.addFlashAttribute("toastError", "Para transferir entre billeteras, la billetera destino también debe ser de este usuario");
-        return "redirect:/usuarios/" + usuarioId;
-    }
-
-    Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
-            TipoTransaccion.TRANSFERENCIA, monto, origenId, destinoId);
-
-    boolean exito = gestor.procesarTransaccion(t);
-
-    if (exito && t.getEstado() != EstadoTransaccion.RECHAZADA) {
-        attrs.addFlashAttribute("toast", "Transferencia realizada correctamente");
-    } else {
-        attrs.addFlashAttribute("toastError", "Transferencia rechazada: saldo insuficiente");
-    }
-
-    return "redirect:/usuarios/" + usuarioId;
-}
-   @PostMapping("/transaccion/transferencia-externa")
-public String transferenciaExterna(@RequestParam String usuarioId,
-        @RequestParam String origenId,
-        @RequestParam String destinoUsuarioId,
-        @RequestParam String destinoBilleteraId,
-        @RequestParam double monto,
-        org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
-
-    Usuario destinoUsuario = gestor.getUsuario(destinoUsuarioId);
-
-    if (destinoUsuario == null) {
-        attrs.addFlashAttribute("toastError", "No existe el usuario destino con ID: " + destinoUsuarioId);
-        return "redirect:/usuarios/" + usuarioId;
-    }
-
-    Billetera origen = gestor.getBilletera(origenId);
-
-    if (origen == null) {
-        attrs.addFlashAttribute("toastError", "No existe la billetera origen con ID: " + origenId);
-        return "redirect:/usuarios/" + usuarioId;
-    }
-
-    if (!billeteraPerteneceAUsuario(origen, usuarioId)) {
-        attrs.addFlashAttribute("toastError", "La billetera origen no pertenece a este usuario");
-        return "redirect:/usuarios/" + usuarioId;
-    }
-
-    Billetera destino = gestor.getBilletera(destinoBilleteraId);
-
-    if (destino == null || !destino.getUsuarioId().equals(destinoUsuarioId)) {
-        attrs.addFlashAttribute("toastError", "La billetera destino no pertenece al usuario indicado");
-        return "redirect:/usuarios/" + usuarioId;
-    }
-
-    Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
-            TipoTransaccion.TRANSFERENCIA, monto, origenId, destinoBilleteraId);
-
-    boolean exito = gestor.procesarTransaccion(t);
-
-    if (exito && t.getEstado() != EstadoTransaccion.RECHAZADA) {
-        attrs.addFlashAttribute("toast", "Transferencia externa realizada correctamente");
-    } else {
-        attrs.addFlashAttribute("toastError", "Transferencia externa rechazada: saldo insuficiente");
-    }
-
-    return "redirect:/usuarios/" + usuarioId;
-}
     @PostMapping("/transaccion/revertir")
     public String revertir(@RequestParam String usuarioId,
             org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
@@ -438,7 +443,7 @@ public String transferenciaExterna(@RequestParam String usuarioId,
         model.addAttribute("transaccionesRiesgo", transaccionesRiesgo);
 
         List<String> auditorias = new ArrayList<>();
-        java.util.Iterator itAuditorias = gestor.getDetector().getHistorialAuditoria().iterator();
+        Iterator<String> itAuditorias = gestor.getDetector().getHistorialAuditoria().iterator();
 
         while (itAuditorias.hasNext()) {
             auditorias.add((String) itAuditorias.next());
@@ -448,12 +453,11 @@ public String transferenciaExterna(@RequestParam String usuarioId,
             for (Transaccion txn : transaccionesRiesgo) {
                 auditorias.add(
                         txn.getFecha() +
-                        " - IA detectó riesgo " + txn.getNivelRiesgo() +
-                        " en la transacción " + txn.getId() +
-                        " del usuario " + txn.getUsuarioId() +
-                        ". Tipo: " + txn.getTipo() +
-                        ". Monto: $" + txn.getValor()
-                );
+                                " - IA detectó riesgo " + txn.getNivelRiesgo() +
+                                " en la transacción " + txn.getId() +
+                                " del usuario " + txn.getUsuarioId() +
+                                ". Tipo: " + txn.getTipo() +
+                                ". Monto: $" + txn.getValor());
             }
         }
 
@@ -746,5 +750,21 @@ public String transferenciaExterna(@RequestParam String usuarioId,
         model.addAttribute("totalTransacciones", transacciones.size());
 
         return "rendimiento";
+    }
+
+    @PostMapping("/billetera/estado")
+    public String cambiarEstado(@RequestParam String billeteraId,
+            @RequestParam String estado,
+            @RequestParam String usuarioId,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+        Billetera b = gestor.getBilletera(billeteraId);
+        if (b != null) {
+            b.setEstado(com.fintech.billetera.modelos.EstadoBilletera.valueOf(estado));
+            gestor.registrarBilletera(b);
+            attrs.addFlashAttribute("toast", "Estado de billetera actualizado a: " + estado);
+        } else {
+            attrs.addFlashAttribute("toastError", "No se encontró la billetera");
+        }
+        return "redirect:/usuarios/" + usuarioId;
     }
 }

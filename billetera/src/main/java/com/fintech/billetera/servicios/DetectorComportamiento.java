@@ -114,7 +114,7 @@ public class DetectorComportamiento {
             return false;
         }
 
-        ListaSimple todas = historial.getTodas();
+        ListaSimple<Transaccion> todas = historial.getTodas();
 
         if (todas.estaVacia()) {
             return txn.getValor() >= umbralMonto;
@@ -122,7 +122,7 @@ public class DetectorComportamiento {
 
         double suma = 0;
         int cantidad = 0;
-        Iterator it = todas.iterator();
+        Iterator<Transaccion> it = todas.iterator();
 
         while (it.hasNext()) {
             Transaccion t = (Transaccion) it.next();
@@ -151,7 +151,7 @@ public class DetectorComportamiento {
     }
 
     private int contarTransaccionesRecientes(HistorialTransacciones historial) {
-        ListaSimple todas = historial.getTodas();
+        ListaSimple<Transaccion> todas = historial.getTodas();
 
         if (todas.getTamanio() < umbralFrecuencia) {
             return 0;
@@ -160,7 +160,7 @@ public class DetectorComportamiento {
         Date ahora = new Date();
         int contador = 0;
 
-        Iterator it = todas.iterator();
+        Iterator<Transaccion> it = todas.iterator();
         while (it.hasNext()) {
             Transaccion t = (Transaccion) it.next();
 
@@ -179,10 +179,10 @@ public class DetectorComportamiento {
             return false;
         }
 
-        ListaSimple todas = historial.getTodas();
+        ListaSimple<Transaccion> todas = historial.getTodas();
         int contador = 0;
 
-        Iterator it = todas.iterator();
+        Iterator<Transaccion> it = todas.iterator();
         while (it.hasNext()) {
             Transaccion t = (Transaccion) it.next();
 
@@ -209,13 +209,13 @@ public class DetectorComportamiento {
             return false;
         }
 
-        ListaSimple todas = historial.getTodas();
+        ListaSimple<Transaccion> todas = historial.getTodas();
         int contador = 0;
         double montoAcumulado = txn.getValor();
 
         Date ahora = new Date();
 
-        Iterator it = todas.iterator();
+        Iterator<Transaccion> it = todas.iterator();
         while (it.hasNext()) {
             Transaccion t = (Transaccion) it.next();
 
