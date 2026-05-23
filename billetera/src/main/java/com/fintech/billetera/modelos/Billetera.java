@@ -9,6 +9,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
 @Entity
 @Table(name = "billeteras")
@@ -18,11 +19,13 @@ public class Billetera {
     private String id;
     private String nombre;
 
-    @Enumerated(EnumType.STRING)
-    private TipoBilletera tipo;
-    private HistorialTransacciones historial;
+   @Enumerated(EnumType.STRING)
+   private TipoBilletera tipo;
 
-    private double saldo;
+   @Transient
+   private HistorialTransacciones historial;
+
+   private double saldo;
 
     @Enumerated(EnumType.STRING)
     private EstadoBilletera estado;

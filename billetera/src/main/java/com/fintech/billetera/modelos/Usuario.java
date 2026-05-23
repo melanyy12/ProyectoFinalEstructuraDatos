@@ -24,6 +24,7 @@ public class Usuario {
     private String telefono;
     private Date fechaRegistro;
     private int puntosTotales;
+    @Transient
     private ListaSimple<Beneficio> beneficiosCanjeados;
 
     @Enumerated(EnumType.STRING)
