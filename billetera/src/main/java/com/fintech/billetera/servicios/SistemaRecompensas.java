@@ -43,10 +43,10 @@ public class SistemaRecompensas {
         while (it.hasNext()) {
             Beneficio b = it.next();
             if (b.getId().equals(beneficioId) && b.estaDisponible(usuario)) {
-                usuario.descontarPuntos(b.getPuntosRequeridos());
-                System.out.println("Beneficio canjeado: " + b.getNombre());
-                return true;
-            }
+              usuario.descontarPuntos(b.getPuntosRequeridos());
+              System.out.println("Beneficio canjeado: " + b.getNombre());
+              return true;
+           }
         }
         return false;
     }

@@ -8,6 +8,7 @@ public class TxnProgramada extends Transaccion {
     private String expresionCron;
     private EstadoProgramada estado;
     private int bonoExtra;
+    private Frecuencia frecuencia;
 
     public TxnProgramada(String id, TipoTransaccion tipo, double valor,
                          String billeteraOrigenId, String billeteraDestinoId,
@@ -18,6 +19,7 @@ public class TxnProgramada extends Transaccion {
         this.estado = EstadoProgramada.PENDIENTE;
         this.bonoExtra = 10;
         this.prioridad = calcularPrioridad();
+        this.frecuencia = Frecuencia.UNICA;
     }
 
     private int calcularPrioridad() {
@@ -38,7 +40,19 @@ public class TxnProgramada extends Transaccion {
     }
     public void setUsuarioId(String usuarioId) {
     super.setUsuarioId(usuarioId);
-}
+    }
+
+    public Frecuencia getFrecuencia() {
+    return frecuencia;
+    }
+
+    public void setFrecuencia(Frecuencia frecuencia) {
+    this.frecuencia = frecuencia;
+    }
+
+    public void setFechaEjecucion(Date fechaEjecucion) {
+    this.fechaEjecucion = fechaEjecucion;
+    }
 
     // Getters
     public Date getFechaEjecucion() { return fechaEjecucion; }

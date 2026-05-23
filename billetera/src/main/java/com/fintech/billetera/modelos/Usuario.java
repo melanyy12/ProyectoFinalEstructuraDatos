@@ -1,9 +1,17 @@
 package com.fintech.billetera.modelos;
 
-import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import com.fintech.billetera.estructuras.ListaSimple;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
 @Entity
 @Table(name = "usuarios")
@@ -16,6 +24,7 @@ public class Usuario {
     private String telefono;
     private Date fechaRegistro;
     private int puntosTotales;
+    private ListaSimple<Beneficio> beneficiosCanjeados;
 
     @Enumerated(EnumType.STRING)
     private NivelUsuario nivel;
@@ -34,6 +43,7 @@ private List<Billetera> billeteras = new ArrayList<>();
         this.puntosTotales = 0;
         this.nivel = NivelUsuario.BRONCE;
         this.billeteras = new ArrayList<>();
+        this.beneficiosCanjeados = new ListaSimple<>();
     }
 
     public void agregarBilletera(Billetera billetera) {
@@ -49,6 +59,14 @@ private List<Billetera> billeteras = new ArrayList<>();
     public void descontarPuntos(int puntos) {
         this.puntosTotales = Math.max(0, this.puntosTotales - puntos);
         actualizarNivel();
+    }
+
+    public void agregarBeneficioCanjeado(Beneficio beneficio) {
+    beneficiosCanjeados.agregar(beneficio);
+    }
+
+    public ListaSimple<Beneficio> getBeneficiosCanjeados() {
+    return beneficiosCanjeados;
     }
 
     public void actualizarNivel() {

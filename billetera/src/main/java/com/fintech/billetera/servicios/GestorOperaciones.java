@@ -1,8 +1,8 @@
 package com.fintech.billetera.servicios;
 
-import java.util.List;
 import java.util.Comparator;
-import jakarta.annotation.PostConstruct;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +14,9 @@ import com.fintech.billetera.estructuras.HistorialTransacciones;
 import com.fintech.billetera.estructuras.PilaReversiones;
 import com.fintech.billetera.modelos.Alerta;
 import com.fintech.billetera.modelos.Billetera;
+import com.fintech.billetera.modelos.Frecuencia;
 import com.fintech.billetera.modelos.EstadoTransaccion;
+import com.fintech.billetera.modelos.Frecuencia;
 import com.fintech.billetera.modelos.NivelRiesgo;
 import com.fintech.billetera.modelos.NivelUsuario;
 import com.fintech.billetera.modelos.TipoAlerta;
@@ -25,6 +27,8 @@ import com.fintech.billetera.modelos.Usuario;
 import com.fintech.billetera.repositorios.BilleteraRepositorio;
 import com.fintech.billetera.repositorios.TransaccionRepositorio;
 import com.fintech.billetera.repositorios.UsuarioRepositorio;
+
+import jakarta.annotation.PostConstruct;
 
 @Service
 public class GestorOperaciones {
@@ -307,12 +311,39 @@ public void reconstruirEstructurasDesdeBD() {
     }
 
     public void ejecutarProgramadas() {
-        while (!colaProgramadas.estaVacia() &&
-                colaProgramadas.peek().estaListaParaEjecutar()) {
-            TxnProgramada txn = colaProgramadas.poll();
-            procesarTransaccion(txn);
+
+    while (!colaProgramadas.estaVacia() &&
+            colaProgramadas.peek().estaListaParaEjecutar()) {
+
+        TxnProgramada txn = colaProgramadas.poll();
+
+        procesarTransaccion(txn);
+
+        if(txn.getFrecuencia() == Frecuencia.SEMANAL){
+
+            txn.setFechaEjecucion(
+                new java.util.Date(
+                    txn.getFechaEjecucion().getTime()
+                    + (7L * 24 * 60 * 60 * 1000)
+                )
+            );
+
+            colaProgramadas.agregar(txn);
+        }
+
+        if(txn.getFrecuencia() == Frecuencia.MENSUAL){
+
+            txn.setFechaEjecucion(
+                new java.util.Date(
+                    txn.getFechaEjecucion().getTime()
+                    + (30L * 24 * 60 * 60 * 1000)
+                )
+            );
+
+            colaProgramadas.agregar(txn);
         }
     }
+}
 
     private void verificarSaldoBajo(Billetera billetera, String usuarioId) {
         if (billetera != null && billetera.getSaldo() < 50000) {
