@@ -129,12 +129,37 @@ public class MotorAnalitica {
     public MapaHash<String, Object> compararRendimiento(HistorialTransacciones lista,
                                                 ArbolFidelizacion arbol,
                                                 GrafoTransacciones grafo) {
+                                                long inicioLista = System.nanoTime();
+                                                lista.getTamanio();
+                                                long finLista = System.nanoTime();
+
+                                                long inicioArbol = System.nanoTime();
+                                                arbol.getOrdenadoPorPuntos();
+                                                long finArbol = System.nanoTime();
+
+long inicioGrafo = System.nanoTime();
+grafo.getTotalAristas();
+long finGrafo = System.nanoTime();
         MapaHash<String, Object> reporte = new MapaHash<>();
         reporte.poner("totalTransacciones", lista.getTamanio());
         reporte.poner("totalUsuariosArbol", arbol.getOrdenadoPorPuntos().getTamanio());
         reporte.poner("totalVerticesGrafo", grafo.getTotalVertices());
         reporte.poner("totalAristasGrafo", grafo.getTotalAristas());
         reporte.poner("hayCiclos", grafo.detectarCiclo());
+        reporte.poner(
+        "tiempoListaNs",
+        (finLista - inicioLista)
+);
+
+reporte.poner(
+        "tiempoArbolNs",
+        (finArbol - inicioArbol)
+);
+
+reporte.poner(
+        "tiempoGrafoNs",
+        (finGrafo - inicioGrafo)
+);
         return reporte;
     }
 }

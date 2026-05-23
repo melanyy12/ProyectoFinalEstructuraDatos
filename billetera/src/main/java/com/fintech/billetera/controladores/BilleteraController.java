@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import org.springframework.web.bind.annotation.ResponseBody;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.fintech.billetera.estructuras.ArbolFidelizacion;
 import com.fintech.billetera.estructuras.ColaNotificaciones;
@@ -52,7 +53,7 @@ public class BilleteraController {
             @RequestParam String email,
             @RequestParam String telefono) {
         Usuario u = new Usuario(id, nombre, email, telefono);
-        gestor.registrarUsuario(u);
+        gestor.actualizarUsuario(u);
         return "redirect:/";
     }
 
@@ -123,6 +124,10 @@ public class BilleteraController {
         model.addAttribute("usuario", u);
         model.addAttribute("historial", gestor.getHistorial(id));
         model.addAttribute("alertas", gestor.getColaNotificaciones().getNoLeidas());
+        model.addAttribute(
+    "programadas",
+    gestor.getColaProgramadas()
+    );
 
         return "usuario";
     }
@@ -661,7 +666,7 @@ public class BilleteraController {
             boolean exito = gestor.getSistemaRecompensas().canjearBeneficio(u, beneficioId);
 
             if (exito) {
-                gestor.registrarUsuario(u);
+                gestor.actualizarUsuario(u);
                 gestor.generarAlerta(new Alerta(
                         "A" + System.currentTimeMillis(),
                         TipoAlerta.CANJE_BENEFICIO,

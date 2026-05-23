@@ -14,6 +14,7 @@ import com.fintech.billetera.estructuras.HistorialTransacciones;
 import com.fintech.billetera.estructuras.PilaReversiones;
 import com.fintech.billetera.modelos.Alerta;
 import com.fintech.billetera.modelos.Billetera;
+import com.fintech.billetera.modelos.EstadoBilletera;
 import com.fintech.billetera.modelos.EstadoTransaccion;
 import com.fintech.billetera.modelos.Frecuencia;
 import com.fintech.billetera.modelos.NivelRiesgo;
@@ -42,6 +43,9 @@ public class GestorOperaciones {
     private TransaccionRepositorio transaccionRepo;
 
     private ColaPrioridad colaProgramadas = new ColaPrioridad();
+    public ColaPrioridad getColaProgramadas() {
+    return colaProgramadas;
+}
     private PilaReversiones pilaReversiones = new PilaReversiones();
     private ColaNotificaciones colaNotificaciones = new ColaNotificaciones();
     private GrafoTransacciones grafo = new GrafoTransacciones();
@@ -51,6 +55,17 @@ public class GestorOperaciones {
     private MotorAnalitica analitica = new MotorAnalitica();
 
    public void registrarUsuario(Usuario usuario) {
+    List<Usuario> usuarios = usuarioRepo.findAll();
+
+    for(Usuario u : usuarios){
+
+    if(u.getEmail().equalsIgnoreCase(usuario.getEmail())){
+
+        System.out.println("Email ya registrado.");
+
+        return;
+      }
+    }
     usuarioRepo.save(usuario);
     grafo.agregarVertice(usuario);
     arbol.actualizar(usuario);
@@ -63,6 +78,14 @@ public class GestorOperaciones {
     }
 
   public boolean procesarTransaccion(Transaccion txn) {
+    if(txn.getValor() <= 0){
+
+    txn.setEstado(EstadoTransaccion.RECHAZADA);
+
+    transaccionRepo.save(txn);
+
+    return false;
+}
     Billetera origen = txn.getBilleteraOrigenId() != null
             ? billeteraRepo.findById(txn.getBilleteraOrigenId()).orElse(null)
             : null;
@@ -70,6 +93,30 @@ public class GestorOperaciones {
     Billetera destino = txn.getBilleteraDestinoId() != null
             ? billeteraRepo.findById(txn.getBilleteraDestinoId()).orElse(null)
             : null;
+            if(origen != null &&
+   destino != null &&
+   origen.getId().equals(destino.getId())){
+
+    txn.setEstado(EstadoTransaccion.RECHAZADA);
+
+    transaccionRepo.save(txn);
+
+    return false;
+}
+    if((origen != null &&
+    origen.getEstado() == EstadoBilletera.BLOQUEADA) ||
+
+   (destino != null &&
+    destino.getEstado() == EstadoBilletera.BLOQUEADA)){
+
+    txn.setEstado(EstadoTransaccion.RECHAZADA);
+
+    transaccionRepo.save(txn);
+
+    System.out.println("Billetera bloqueada.");
+
+    return false;
+}
 
     String usuarioId = origen != null
             ? origen.getUsuarioId()
@@ -255,6 +302,7 @@ public void reconstruirEstructurasDesdeBD() {
             return false;
         }
         Transaccion txn = pilaReversiones.pop();
+        
         if(txn.getEstado() == EstadoTransaccion.REVERTIDA){
             return false;
 }
@@ -309,6 +357,12 @@ public void reconstruirEstructurasDesdeBD() {
     }
 
     public void programarTransaccion(TxnProgramada txn) {
+        if(txn.getFechaEjecucion().before(new java.util.Date())){
+
+    System.out.println("Fecha inválida.");
+
+    return;
+    }
         colaProgramadas.agregar(txn);
     }
 
@@ -520,5 +574,11 @@ public void reconstruirEstructurasDesdeBD() {
     }
 
     return canjeado;
+}
+public void actualizarUsuario(Usuario usuario) {
+    usuarioRepo.save(usuario);
+    arbol.actualizar(usuario);
+
+    System.out.println("Usuario actualizado: " + usuario.getNombre());
 }
 }
