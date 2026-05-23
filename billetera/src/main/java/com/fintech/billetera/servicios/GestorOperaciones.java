@@ -14,7 +14,6 @@ import com.fintech.billetera.estructuras.HistorialTransacciones;
 import com.fintech.billetera.estructuras.PilaReversiones;
 import com.fintech.billetera.modelos.Alerta;
 import com.fintech.billetera.modelos.Billetera;
-import com.fintech.billetera.modelos.Frecuencia;
 import com.fintech.billetera.modelos.EstadoTransaccion;
 import com.fintech.billetera.modelos.Frecuencia;
 import com.fintech.billetera.modelos.NivelRiesgo;
@@ -256,6 +255,9 @@ public void reconstruirEstructurasDesdeBD() {
             return false;
         }
         Transaccion txn = pilaReversiones.pop();
+        if(txn.getEstado() == EstadoTransaccion.REVERTIDA){
+            return false;
+}
         Billetera origen = txn.getBilleteraOrigenId() != null
                 ? billeteraRepo.findById(txn.getBilleteraOrigenId()).orElse(null)
                 : null;
@@ -420,5 +422,103 @@ public void reconstruirEstructurasDesdeBD() {
     public DetectorComportamiento getDetector() {
         return detector;
     }
-   
+
+    public boolean revertirTransaccionPorId(String id) {
+
+    Transaccion txn = transaccionRepo.findById(id).orElse(null);
+
+    if(txn == null){
+        return false;
+    }
+
+    if(txn.getEstado() == EstadoTransaccion.REVERTIDA){
+        return false;
+    }
+
+    Billetera origen = txn.getBilleteraOrigenId() != null
+            ? billeteraRepo.findById(txn.getBilleteraOrigenId()).orElse(null)
+            : null;
+
+    Billetera destino = txn.getBilleteraDestinoId() != null
+            ? billeteraRepo.findById(txn.getBilleteraDestinoId()).orElse(null)
+            : null;
+
+    switch (txn.getTipo()) {
+
+        case RECARGA:
+
+            if(destino != null){
+                destino.retirar(txn.getValor());
+                billeteraRepo.save(destino);
+            }
+
+            break;
+
+        case RETIRO:
+
+            if(origen != null){
+                origen.recargar(txn.getValor());
+                billeteraRepo.save(origen);
+            }
+
+            break;
+
+        case TRANSFERENCIA:
+        case PAGO_PROGRAMADO:
+
+            if(origen != null){
+                origen.recargar(txn.getValor());
+                billeteraRepo.save(origen);
+            }
+
+            if(destino != null){
+                destino.retirar(txn.getValor());
+                billeteraRepo.save(destino);
+            }
+
+            break;
+    }
+
+    txn.setEstado(EstadoTransaccion.REVERTIDA);
+
+    transaccionRepo.save(txn);
+
+    Usuario usuario = usuarioRepo.findById(txn.getUsuarioId()).orElse(null);
+
+    if(usuario != null){
+
+        sistemaRecompensas.recalcularAlRevertir(usuario, txn);
+
+        usuarioRepo.save(usuario);
+
+        arbol.actualizar(usuario);
+    }
+
+    return true;
+}
+   public boolean canjearBeneficioUsuario(String usuarioId, String beneficioId){
+
+    Usuario usuario = usuarioRepo.findById(usuarioId).orElse(null);
+
+    if(usuario == null){
+        return false;
+    }
+
+    boolean canjeado = sistemaRecompensas
+            .canjearBeneficio(usuario, beneficioId);
+
+    if(canjeado){
+
+        usuarioRepo.save(usuario);
+
+        generarAlerta(new Alerta(
+                "A" + System.currentTimeMillis(),
+                TipoAlerta.BENEFICIO_CANJEADO,
+                "Canjeaste el beneficio: " + beneficioId,
+                usuarioId
+        ));
+    }
+
+    return canjeado;
+}
 }

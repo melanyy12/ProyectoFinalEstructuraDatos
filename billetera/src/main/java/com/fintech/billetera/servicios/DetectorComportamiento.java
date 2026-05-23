@@ -77,6 +77,10 @@ public class DetectorComportamiento {
             puntaje += 10;
             motivos += "Horario inusual. ";
         }
+        if (detectarMultiplesBilleteras(historial)) {
+        puntaje += 35;
+        motivos += "Uso excesivo de múltiples billeteras. ";
+        }
 
         NivelRiesgo riesgo = clasificarRiesgo(puntaje);
         txn.marcarRiesgo(riesgo);
@@ -232,6 +236,32 @@ public class DetectorComportamiento {
 
         return contador >= 3 && montoAcumulado >= umbralMonto;
     }
+
+    public boolean detectarMultiplesBilleteras(
+        HistorialTransacciones historial) {
+
+    java.util.HashSet<String> billeterasUsadas =
+            new java.util.HashSet<>();
+
+    ListaSimple<Transaccion> todas = historial.getTodas();
+
+    Iterator<Transaccion> it = todas.iterator();
+
+    while (it.hasNext()) {
+
+        Transaccion t = it.next();
+
+        if (t.getBilleteraOrigenId() != null) {
+            billeterasUsadas.add(t.getBilleteraOrigenId());
+        }
+
+        if (t.getBilleteraDestinoId() != null) {
+            billeterasUsadas.add(t.getBilleteraDestinoId());
+        }
+    }
+
+    return billeterasUsadas.size() >= 5;
+}
 
     public String generarRecomendacionIA(Transaccion txn, NivelRiesgo riesgo) {
         if (riesgo == NivelRiesgo.ALTO) {

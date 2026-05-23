@@ -1,6 +1,7 @@
 package com.fintech.billetera.servicios;
 
 import java.util.Date;
+import java.util.List;
 
 import com.fintech.billetera.estructuras.ArbolFidelizacion;
 import com.fintech.billetera.estructuras.GrafoTransacciones;
@@ -62,6 +63,67 @@ public class MotorAnalitica {
         java.util.Iterator<Transaccion> it = transacciones.iterator();
         while (it.hasNext()) resultado.agregar(it.next());
         return resultado;
+    }
+
+    public String usuarioConMasTransferencias(List<Transaccion> transacciones){
+
+    java.util.HashMap<String, Integer> conteo = new java.util.HashMap<>();
+
+    for(Transaccion t : transacciones){
+
+        if(t.getUsuarioId() != null &&
+           t.getTipo() == TipoTransaccion.TRANSFERENCIA){
+
+            conteo.put(
+                t.getUsuarioId(),
+                conteo.getOrDefault(t.getUsuarioId(), 0) + 1
+            );
+        }
+    }
+
+    String mejorUsuario = null;
+    int max = 0;
+
+    for(String id : conteo.keySet()){
+
+        if(conteo.get(id) > max){
+            max = conteo.get(id);
+            mejorUsuario = id;
+        }
+    }
+
+    return mejorUsuario;
+}
+    public TipoTransaccion categoriaMasActiva(List<Transaccion> transacciones){
+
+    java.util.HashMap<TipoTransaccion, Integer> conteo =
+            new java.util.HashMap<>();
+
+    for(Transaccion t : transacciones){
+
+        conteo.put(
+            t.getTipo(),
+            conteo.getOrDefault(t.getTipo(), 0) + 1
+        );
+    }
+
+    TipoTransaccion mejor = null;
+    int max = 0;
+
+    for(TipoTransaccion tipo : conteo.keySet()){
+
+        if(conteo.get(tipo) > max){
+            max = conteo.get(tipo);
+            mejor = tipo;
+        }
+    }
+
+    return mejor;
+   }
+    public int conexionesUsuario(
+        GrafoTransacciones grafo){
+
+    return grafo.getTotalAristas();
     }
 
     public MapaHash<String, Object> compararRendimiento(HistorialTransacciones lista,
