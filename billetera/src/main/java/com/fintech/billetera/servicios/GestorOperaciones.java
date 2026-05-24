@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import com.fintech.billetera.estructuras.ArbolFidelizacion;
 import com.fintech.billetera.estructuras.ColaNotificaciones;
@@ -27,6 +28,7 @@ import com.fintech.billetera.modelos.Usuario;
 import com.fintech.billetera.repositorios.BilleteraRepositorio;
 import com.fintech.billetera.repositorios.TransaccionRepositorio;
 import com.fintech.billetera.repositorios.UsuarioRepositorio;
+import com.fintech.billetera.repositorios.AuditoriaRepositorio;
 
 import jakarta.annotation.PostConstruct;
 
@@ -42,230 +44,240 @@ public class GestorOperaciones {
     @Autowired
     private TransaccionRepositorio transaccionRepo;
 
+    @Autowired
+    private AuditoriaRepositorio auditoriaRepo;
+
     private ColaPrioridad colaProgramadas = new ColaPrioridad();
+
     public ColaPrioridad getColaProgramadas() {
-    return colaProgramadas;
-}
+        return colaProgramadas;
+    }
+
     private PilaReversiones pilaReversiones = new PilaReversiones();
     private ColaNotificaciones colaNotificaciones = new ColaNotificaciones();
     private GrafoTransacciones grafo = new GrafoTransacciones();
     private ArbolFidelizacion arbol = new ArbolFidelizacion();
     private SistemaRecompensas sistemaRecompensas = new SistemaRecompensas();
-    private DetectorComportamiento detector = new DetectorComportamiento();
+    private DetectorComportamiento detector;
     private MotorAnalitica analitica = new MotorAnalitica();
 
-   public void registrarUsuario(Usuario usuario) {
-    List<Usuario> usuarios = usuarioRepo.findAll();
+    public void registrarUsuario(Usuario usuario) {
+        List<Usuario> usuarios = usuarioRepo.findAll();
 
-    for(Usuario u : usuarios){
+        for (Usuario u : usuarios) {
 
-    if(u.getEmail().equalsIgnoreCase(usuario.getEmail())){
+            if (u.getEmail().equalsIgnoreCase(usuario.getEmail())) {
 
-        System.out.println("Email ya registrado.");
+                System.out.println("Email ya registrado.");
 
-        return;
-      }
+                return;
+            }
+        }
+        usuarioRepo.save(usuario);
+        grafo.agregarVertice(usuario);
+        arbol.actualizar(usuario);
+        System.out.println("Usuario registrado: " + usuario.getNombre());
     }
-    usuarioRepo.save(usuario);
-    grafo.agregarVertice(usuario);
-    arbol.actualizar(usuario);
-    System.out.println("Usuario registrado: " + usuario.getNombre());
-}
 
     public void registrarBilletera(Billetera billetera) {
         billeteraRepo.save(billetera);
         System.out.println("Billetera registrada: " + billetera.getNombre());
     }
 
-  public boolean procesarTransaccion(Transaccion txn) {
-    if(txn.getValor() <= 0){
+    public boolean procesarTransaccion(Transaccion txn) {
+        if (txn.getValor() <= 0) {
 
-    txn.setEstado(EstadoTransaccion.RECHAZADA);
-
-    transaccionRepo.save(txn);
-
-    return false;
-}
-    Billetera origen = txn.getBilleteraOrigenId() != null
-            ? billeteraRepo.findById(txn.getBilleteraOrigenId()).orElse(null)
-            : null;
-
-    Billetera destino = txn.getBilleteraDestinoId() != null
-            ? billeteraRepo.findById(txn.getBilleteraDestinoId()).orElse(null)
-            : null;
-            if(origen != null &&
-   destino != null &&
-   origen.getId().equals(destino.getId())){
-
-    txn.setEstado(EstadoTransaccion.RECHAZADA);
-
-    transaccionRepo.save(txn);
-
-    return false;
-}
-    if((origen != null &&
-    origen.getEstado() == EstadoBilletera.BLOQUEADA) ||
-
-   (destino != null &&
-    destino.getEstado() == EstadoBilletera.BLOQUEADA)){
-
-    txn.setEstado(EstadoTransaccion.RECHAZADA);
-
-    transaccionRepo.save(txn);
-
-    System.out.println("Billetera bloqueada.");
-
-    return false;
-}
-
-    String usuarioId = origen != null
-            ? origen.getUsuarioId()
-            : destino != null ? destino.getUsuarioId() : null;
-
-    txn.setUsuarioId(usuarioId);
-
-    if (txn.getTipo() == TipoTransaccion.RETIRO ||
-            txn.getTipo() == TipoTransaccion.TRANSFERENCIA) {
-
-        if (origen == null || !origen.validarSaldo(txn.getValor())) {
             txn.setEstado(EstadoTransaccion.RECHAZADA);
 
             transaccionRepo.save(txn);
 
-            generarAlerta(new Alerta(
-                    "A" + System.currentTimeMillis(),
-                    TipoAlerta.OPERACION_RECHAZADA,
-                    "Saldo insuficiente para: " + txn.getId(),
-                    usuarioId
-            ));
+            return false;
+        }
+        Billetera origen = txn.getBilleteraOrigenId() != null
+                ? billeteraRepo.findById(txn.getBilleteraOrigenId()).orElse(null)
+                : null;
+
+        Billetera destino = txn.getBilleteraDestinoId() != null
+                ? billeteraRepo.findById(txn.getBilleteraDestinoId()).orElse(null)
+                : null;
+        if (origen != null &&
+                destino != null &&
+                origen.getId().equals(destino.getId())) {
+
+            txn.setEstado(EstadoTransaccion.RECHAZADA);
+
+            transaccionRepo.save(txn);
 
             return false;
         }
-    }
+        if ((origen != null &&
+                origen.getEstado() == EstadoBilletera.BLOQUEADA) ||
 
-    ejecutarMovimiento(txn, origen, destino);
+                (destino != null &&
+                        destino.getEstado() == EstadoBilletera.BLOQUEADA)) {
 
-    Usuario usuario = usuarioId != null
-            ? usuarioRepo.findById(usuarioId).orElse(null)
-            : null;
+            txn.setEstado(EstadoTransaccion.RECHAZADA);
 
-    if (usuario != null) {
-        List<Transaccion> historialLista = transaccionRepo
-                .findByUsuarioIdOrderByFechaDesc(usuarioId);
+            transaccionRepo.save(txn);
 
-        HistorialTransacciones historial = new HistorialTransacciones();
+            System.out.println("Billetera bloqueada.");
 
-        for (Transaccion t : historialLista) {
-            historial.agregar(t);
+            return false;
         }
 
-        NivelRiesgo riesgo = detector.analizarTransaccion(txn, historial, usuario);
+        String usuarioId = origen != null
+                ? origen.getUsuarioId()
+                : destino != null ? destino.getUsuarioId() : null;
 
-        if (riesgo != NivelRiesgo.BAJO) {
-            generarAlerta(new Alerta(
-                    "A" + System.currentTimeMillis(),
-                    TipoAlerta.RIESGO_DETECTADO,
-                    "IA detectó una transacción sospechosa: " + txn.getId() + " | Riesgo: " + riesgo,
-                    usuarioId,
-                    riesgo
-            ));
-        }
+        txn.setUsuarioId(usuarioId);
 
-        int puntos = sistemaRecompensas.calcularPuntos(txn);
-        NivelUsuario nivelAnterior = usuario.getNivel();
+        if (txn.getTipo() == TipoTransaccion.RETIRO ||
+                txn.getTipo() == TipoTransaccion.TRANSFERENCIA) {
 
-        usuario.acumularPuntos(puntos);
-        usuarioRepo.save(usuario);
-        arbol.actualizar(usuario);
+            if (origen == null || !origen.validarSaldo(txn.getValor())) {
+                txn.setEstado(EstadoTransaccion.RECHAZADA);
 
-        if (usuario.getNivel() != nivelAnterior) {
-            generarAlerta(new Alerta(
-                    "A" + System.currentTimeMillis(),
-                    TipoAlerta.ASCENSO_NIVEL,
-                    "Subiste a nivel: " + usuario.getNivel(),
-                    usuarioId
-            ));
-        }
+                transaccionRepo.save(txn);
 
-        if ((txn.getTipo() == TipoTransaccion.TRANSFERENCIA ||
-                txn.getTipo() == TipoTransaccion.PAGO_PROGRAMADO) && destino != null) {
+                generarAlerta(new Alerta(
+                        "A" + System.currentTimeMillis(),
+                        TipoAlerta.OPERACION_RECHAZADA,
+                        "Saldo insuficiente para: " + txn.getId(),
+                        usuarioId));
 
-            String uidDestino = destino.getUsuarioId();
-
-            if (usuarioId != null &&
-                    uidDestino != null &&
-                    !usuarioId.equals(uidDestino)) {
-
-                grafo.agregarArista(usuarioId, uidDestino, txn.getValor());
+                return false;
             }
         }
 
-        pilaReversiones.push(txn);
-        verificarSaldoBajo(origen, usuarioId);
-    }
+        ejecutarMovimiento(txn, origen, destino);
 
-    transaccionRepo.save(txn);
-    return true;
-}
-    @PostConstruct
-public void reconstruirEstructurasDesdeBD() {
-    System.out.println("Reconstruyendo estructuras desde la base de datos...");
+        Usuario usuario = usuarioId != null
+                ? usuarioRepo.findById(usuarioId).orElse(null)
+                : null;
 
-    grafo = new GrafoTransacciones();
-    arbol = new ArbolFidelizacion();
-    pilaReversiones = new PilaReversiones();
+        if (usuario != null) {
+            List<Transaccion> historialLista = transaccionRepo
+                    .findByUsuarioIdOrderByFechaDesc(usuarioId);
 
-    List<Usuario> usuarios = usuarioRepo.findAll();
+            HistorialTransacciones historial = new HistorialTransacciones();
 
-    for (Usuario usuario : usuarios) {
-        grafo.agregarVertice(usuario);
-        arbol.insertar(usuario);
-    }
+            for (Transaccion t : historialLista) {
+                historial.agregar(t);
+            }
 
-    List<Transaccion> transacciones = transaccionRepo.findAll();
+            NivelRiesgo riesgo = detector.analizarTransaccion(txn, historial, usuario);
 
-    transacciones.sort(Comparator.comparing(Transaccion::getFecha));
+            if (riesgo != NivelRiesgo.BAJO) {
+                generarAlerta(new Alerta(
+                        "A" + System.currentTimeMillis(),
+                        TipoAlerta.RIESGO_DETECTADO,
+                        "IA detectó una transacción sospechosa: " + txn.getId() + " | Riesgo: " + riesgo,
+                        usuarioId,
+                        riesgo));
+            }
 
-    for (Transaccion txn : transacciones) {
-        if (txn.getEstado() == EstadoTransaccion.REVERTIDA ||
-            txn.getEstado() == EstadoTransaccion.RECHAZADA) {
-            continue;
-        }
+            int puntos = sistemaRecompensas.calcularPuntos(txn);
+            NivelUsuario nivelAnterior = usuario.getNivel();
 
-        if (txn.getTipo() == TipoTransaccion.TRANSFERENCIA ||
-            txn.getTipo() == TipoTransaccion.PAGO_PROGRAMADO) {
+            usuario.acumularPuntos(puntos);
+            usuarioRepo.save(usuario);
+            arbol.actualizar(usuario);
 
-            Billetera origen = txn.getBilleteraOrigenId() != null
-                    ? billeteraRepo.findById(txn.getBilleteraOrigenId()).orElse(null)
-                    : null;
+            if (usuario.getNivel() != nivelAnterior) {
+                generarAlerta(new Alerta(
+                        "A" + System.currentTimeMillis(),
+                        TipoAlerta.ASCENSO_NIVEL,
+                        "Subiste a nivel: " + usuario.getNivel(),
+                        usuarioId));
+            }
 
-            Billetera destino = txn.getBilleteraDestinoId() != null
-                    ? billeteraRepo.findById(txn.getBilleteraDestinoId()).orElse(null)
-                    : null;
+            if ((txn.getTipo() == TipoTransaccion.TRANSFERENCIA ||
+                    txn.getTipo() == TipoTransaccion.PAGO_PROGRAMADO) && destino != null) {
 
-            if (origen != null && destino != null) {
-                String usuarioOrigenId = origen.getUsuarioId();
-                String usuarioDestinoId = destino.getUsuarioId();
+                String uidDestino = destino.getUsuarioId();
 
-                if (usuarioOrigenId != null &&
-                    usuarioDestinoId != null &&
-                    !usuarioOrigenId.equals(usuarioDestinoId)) {
+                if (usuarioId != null &&
+                        uidDestino != null &&
+                        !usuarioId.equals(uidDestino)) {
 
-                    grafo.agregarArista(usuarioOrigenId, usuarioDestinoId, txn.getValor());
+                    grafo.agregarArista(usuarioId, uidDestino, txn.getValor());
                 }
             }
+
+            pilaReversiones.push(txn);
+            verificarSaldoBajo(origen, usuarioId);
         }
 
-        if (txn.getEstado() == EstadoTransaccion.COMPLETADA) {
-            pilaReversiones.push(txn);
-        }
+        transaccionRepo.save(txn);
+        return true;
     }
 
-    System.out.println("Estructuras reconstruidas: "
-            + usuarios.size() + " usuarios, "
-            + transacciones.size() + " transacciones, "
-            + grafo.getTotalAristas() + " relaciones en el grafo.");
-}
+    @PostConstruct
+    public void reconstruirEstructurasDesdeBD() {
+        detector = new DetectorComportamiento(auditoriaRepo);
+        System.out.println("Reconstruyendo estructuras desde la base de datos...");
+
+        grafo = new GrafoTransacciones();
+        arbol = new ArbolFidelizacion();
+        pilaReversiones = new PilaReversiones();
+
+        List<Usuario> usuarios = usuarioRepo.findAll();
+
+        for (Usuario usuario : usuarios) {
+            grafo.agregarVertice(usuario);
+            arbol.insertar(usuario);
+        }
+
+        List<Transaccion> transacciones = transaccionRepo.findAll();
+
+        transacciones.sort(Comparator.comparing(Transaccion::getFecha));
+
+        for (Transaccion txn : transacciones) {
+            if (txn.getEstado() == EstadoTransaccion.REVERTIDA ||
+                    txn.getEstado() == EstadoTransaccion.RECHAZADA) {
+                continue;
+            }
+
+            if (txn.getTipo() == TipoTransaccion.TRANSFERENCIA ||
+                    txn.getTipo() == TipoTransaccion.PAGO_PROGRAMADO) {
+
+                Billetera origen = txn.getBilleteraOrigenId() != null
+                        ? billeteraRepo.findById(txn.getBilleteraOrigenId()).orElse(null)
+                        : null;
+
+                Billetera destino = txn.getBilleteraDestinoId() != null
+                        ? billeteraRepo.findById(txn.getBilleteraDestinoId()).orElse(null)
+                        : null;
+
+                if (origen != null && destino != null) {
+                    String usuarioOrigenId = origen.getUsuarioId();
+                    String usuarioDestinoId = destino.getUsuarioId();
+
+                    if (usuarioOrigenId != null &&
+                            usuarioDestinoId != null &&
+                            !usuarioOrigenId.equals(usuarioDestinoId)) {
+
+                        grafo.agregarArista(usuarioOrigenId, usuarioDestinoId, txn.getValor());
+                    }
+                }
+            }
+
+            if (txn.getEstado() == EstadoTransaccion.COMPLETADA) {
+                pilaReversiones.push(txn);
+            }
+        }
+
+        // Recargar historial de auditoría desde BD
+        List<com.fintech.billetera.modelos.AuditoriaEvento> eventos = auditoriaRepo.findAll();
+        for (com.fintech.billetera.modelos.AuditoriaEvento evento : eventos) {
+            detector.getHistorialAuditoria().agregar(evento.getEvento());
+        }
+
+        System.out.println("Estructuras reconstruidas: "
+                + usuarios.size() + " usuarios, "
+                + transacciones.size() + " transacciones, "
+                + grafo.getTotalAristas() + " relaciones en el grafo.");
+    }
 
     private void ejecutarMovimiento(Transaccion txn, Billetera origen, Billetera destino) {
         switch (txn.getTipo()) {
@@ -302,10 +314,10 @@ public void reconstruirEstructurasDesdeBD() {
             return false;
         }
         Transaccion txn = pilaReversiones.pop();
-        
-        if(txn.getEstado() == EstadoTransaccion.REVERTIDA){
+
+        if (txn.getEstado() == EstadoTransaccion.REVERTIDA) {
             return false;
-}
+        }
         Billetera origen = txn.getBilleteraOrigenId() != null
                 ? billeteraRepo.findById(txn.getBilleteraOrigenId()).orElse(null)
                 : null;
@@ -357,49 +369,50 @@ public void reconstruirEstructurasDesdeBD() {
     }
 
     public void programarTransaccion(TxnProgramada txn) {
-        if(txn.getFechaEjecucion().before(new java.util.Date())){
+        if (txn.getFechaEjecucion().before(new java.util.Date())) {
 
-    System.out.println("Fecha inválida.");
+            System.out.println("Fecha inválida.");
 
-    return;
-    }
+            return;
+        }
         colaProgramadas.agregar(txn);
     }
 
     public void ejecutarProgramadas() {
 
-    while (!colaProgramadas.estaVacia() &&
-            colaProgramadas.peek().estaListaParaEjecutar()) {
+        while (!colaProgramadas.estaVacia() &&
+                colaProgramadas.peek().estaListaParaEjecutar()) {
 
-        TxnProgramada txn = colaProgramadas.poll();
+            TxnProgramada txn = colaProgramadas.poll();
 
-        procesarTransaccion(txn);
+            procesarTransaccion(txn);
 
-        if(txn.getFrecuencia() == Frecuencia.SEMANAL){
+            if (txn.getFrecuencia() == Frecuencia.SEMANAL) {
 
-            txn.setFechaEjecucion(
-                new java.util.Date(
-                    txn.getFechaEjecucion().getTime()
-                    + (7L * 24 * 60 * 60 * 1000)
-                )
-            );
+                txn.setFechaEjecucion(
+                        new java.util.Date(
+                                txn.getFechaEjecucion().getTime()
+                                        + (7L * 24 * 60 * 60 * 1000)));
 
-            colaProgramadas.agregar(txn);
-        }
+                colaProgramadas.agregar(txn);
+            }
 
-        if(txn.getFrecuencia() == Frecuencia.MENSUAL){
+            if (txn.getFrecuencia() == Frecuencia.MENSUAL) {
 
-            txn.setFechaEjecucion(
-                new java.util.Date(
-                    txn.getFechaEjecucion().getTime()
-                    + (30L * 24 * 60 * 60 * 1000)
-                )
-            );
+                txn.setFechaEjecucion(
+                        new java.util.Date(
+                                txn.getFechaEjecucion().getTime()
+                                        + (30L * 24 * 60 * 60 * 1000)));
 
-            colaProgramadas.agregar(txn);
+                colaProgramadas.agregar(txn);
+            }
         }
     }
-}
+
+    @Scheduled(fixedDelay = 60000)
+    public void ejecutarProgramadasAutomaticamente() {
+        ejecutarProgramadas();
+    }
 
     private void verificarSaldoBajo(Billetera billetera, String usuarioId) {
         if (billetera != null && billetera.getSaldo() < 50000) {
@@ -479,106 +492,107 @@ public void reconstruirEstructurasDesdeBD() {
 
     public boolean revertirTransaccionPorId(String id) {
 
-    Transaccion txn = transaccionRepo.findById(id).orElse(null);
+        Transaccion txn = transaccionRepo.findById(id).orElse(null);
 
-    if(txn == null){
-        return false;
+        if (txn == null) {
+            return false;
+        }
+
+        if (txn.getEstado() == EstadoTransaccion.REVERTIDA) {
+            return false;
+        }
+
+        Billetera origen = txn.getBilleteraOrigenId() != null
+                ? billeteraRepo.findById(txn.getBilleteraOrigenId()).orElse(null)
+                : null;
+
+        Billetera destino = txn.getBilleteraDestinoId() != null
+                ? billeteraRepo.findById(txn.getBilleteraDestinoId()).orElse(null)
+                : null;
+
+        switch (txn.getTipo()) {
+
+            case RECARGA:
+
+                if (destino != null) {
+                    destino.retirar(txn.getValor());
+                    billeteraRepo.save(destino);
+                }
+
+                break;
+
+            case RETIRO:
+
+                if (origen != null) {
+                    origen.recargar(txn.getValor());
+                    billeteraRepo.save(origen);
+                }
+
+                break;
+
+            case TRANSFERENCIA:
+            case PAGO_PROGRAMADO:
+
+                if (origen != null) {
+                    origen.recargar(txn.getValor());
+                    billeteraRepo.save(origen);
+                }
+
+                if (destino != null) {
+                    destino.retirar(txn.getValor());
+                    billeteraRepo.save(destino);
+                }
+
+                break;
+        }
+
+        txn.setEstado(EstadoTransaccion.REVERTIDA);
+
+        transaccionRepo.save(txn);
+
+        Usuario usuario = usuarioRepo.findById(txn.getUsuarioId()).orElse(null);
+
+        if (usuario != null) {
+
+            sistemaRecompensas.recalcularAlRevertir(usuario, txn);
+
+            usuarioRepo.save(usuario);
+
+            arbol.actualizar(usuario);
+        }
+
+        return true;
     }
 
-    if(txn.getEstado() == EstadoTransaccion.REVERTIDA){
-        return false;
+    public boolean canjearBeneficioUsuario(String usuarioId, String beneficioId) {
+
+        Usuario usuario = usuarioRepo.findById(usuarioId).orElse(null);
+
+        if (usuario == null) {
+            return false;
+        }
+
+        boolean canjeado = sistemaRecompensas
+                .canjearBeneficio(usuario, beneficioId);
+
+        if (canjeado) {
+
+            usuarioRepo.save(usuario);
+
+            generarAlerta(new Alerta(
+                    "A" + System.currentTimeMillis(),
+                    TipoAlerta.BENEFICIO_CANJEADO,
+                    "Canjeaste el beneficio: " + beneficioId,
+                    usuarioId));
+        }
+
+        return canjeado;
     }
 
-    Billetera origen = txn.getBilleteraOrigenId() != null
-            ? billeteraRepo.findById(txn.getBilleteraOrigenId()).orElse(null)
-            : null;
-
-    Billetera destino = txn.getBilleteraDestinoId() != null
-            ? billeteraRepo.findById(txn.getBilleteraDestinoId()).orElse(null)
-            : null;
-
-    switch (txn.getTipo()) {
-
-        case RECARGA:
-
-            if(destino != null){
-                destino.retirar(txn.getValor());
-                billeteraRepo.save(destino);
-            }
-
-            break;
-
-        case RETIRO:
-
-            if(origen != null){
-                origen.recargar(txn.getValor());
-                billeteraRepo.save(origen);
-            }
-
-            break;
-
-        case TRANSFERENCIA:
-        case PAGO_PROGRAMADO:
-
-            if(origen != null){
-                origen.recargar(txn.getValor());
-                billeteraRepo.save(origen);
-            }
-
-            if(destino != null){
-                destino.retirar(txn.getValor());
-                billeteraRepo.save(destino);
-            }
-
-            break;
-    }
-
-    txn.setEstado(EstadoTransaccion.REVERTIDA);
-
-    transaccionRepo.save(txn);
-
-    Usuario usuario = usuarioRepo.findById(txn.getUsuarioId()).orElse(null);
-
-    if(usuario != null){
-
-        sistemaRecompensas.recalcularAlRevertir(usuario, txn);
-
+    public void actualizarUsuario(Usuario usuario) {
         usuarioRepo.save(usuario);
-
         arbol.actualizar(usuario);
+
+        System.out.println("Usuario actualizado: " + usuario.getNombre());
     }
-
-    return true;
-}
-   public boolean canjearBeneficioUsuario(String usuarioId, String beneficioId){
-
-    Usuario usuario = usuarioRepo.findById(usuarioId).orElse(null);
-
-    if(usuario == null){
-        return false;
-    }
-
-    boolean canjeado = sistemaRecompensas
-            .canjearBeneficio(usuario, beneficioId);
-
-    if(canjeado){
-
-        usuarioRepo.save(usuario);
-
-        generarAlerta(new Alerta(
-                "A" + System.currentTimeMillis(),
-                TipoAlerta.BENEFICIO_CANJEADO,
-                "Canjeaste el beneficio: " + beneficioId,
-                usuarioId
-        ));
-    }
-
-    return canjeado;
-}
-public void actualizarUsuario(Usuario usuario) {
-    usuarioRepo.save(usuario);
-    arbol.actualizar(usuario);
-
-    System.out.println("Usuario actualizado: " + usuario.getNombre());
-}
 }

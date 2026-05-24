@@ -18,12 +18,18 @@ public class DetectorComportamiento {
     private double umbralMonto;
     private long ventanaTiempoMs;
     private ListaSimple<String> historialAuditoria;
+    private com.fintech.billetera.repositorios.AuditoriaRepositorio auditoriaRepo;
 
     public DetectorComportamiento() {
         this.umbralFrecuencia = 3;
         this.umbralMonto = 3000000;
         this.ventanaTiempoMs = 60000;
         this.historialAuditoria = new ListaSimple<>();
+    }
+
+    public DetectorComportamiento(com.fintech.billetera.repositorios.AuditoriaRepositorio auditoriaRepo) {
+        this();
+        this.auditoriaRepo = auditoriaRepo;
     }
 
     public NivelRiesgo analizarTransaccion(Transaccion txn, HistorialTransacciones historial, Usuario usuario) {
@@ -78,8 +84,8 @@ public class DetectorComportamiento {
             motivos += "Horario inusual. ";
         }
         if (detectarMultiplesBilleteras(historial)) {
-        puntaje += 35;
-        motivos += "Uso excesivo de múltiples billeteras. ";
+            puntaje += 35;
+            motivos += "Uso excesivo de múltiples billeteras. ";
         }
 
         NivelRiesgo riesgo = clasificarRiesgo(puntaje);
@@ -89,11 +95,10 @@ public class DetectorComportamiento {
             String usuarioId = usuario != null ? usuario.getId() : "SIN_USUARIO";
             registrarAuditoria(
                     "IA detectó riesgo " + riesgo +
-                    " en la transacción " + txn.getId() +
-                    " del usuario " + usuarioId +
-                    ". Puntaje: " + puntaje +
-                    ". Motivos: " + motivos
-            );
+                            " en la transacción " + txn.getId() +
+                            " del usuario " + usuarioId +
+                            ". Puntaje: " + puntaje +
+                            ". Motivos: " + motivos);
         }
 
         return riesgo;
@@ -238,30 +243,29 @@ public class DetectorComportamiento {
     }
 
     public boolean detectarMultiplesBilleteras(
-        HistorialTransacciones historial) {
+            HistorialTransacciones historial) {
 
-    java.util.HashSet<String> billeterasUsadas =
-            new java.util.HashSet<>();
+        java.util.HashSet<String> billeterasUsadas = new java.util.HashSet<>();
 
-    ListaSimple<Transaccion> todas = historial.getTodas();
+        ListaSimple<Transaccion> todas = historial.getTodas();
 
-    Iterator<Transaccion> it = todas.iterator();
+        Iterator<Transaccion> it = todas.iterator();
 
-    while (it.hasNext()) {
+        while (it.hasNext()) {
 
-        Transaccion t = it.next();
+            Transaccion t = it.next();
 
-        if (t.getBilleteraOrigenId() != null) {
-            billeterasUsadas.add(t.getBilleteraOrigenId());
+            if (t.getBilleteraOrigenId() != null) {
+                billeterasUsadas.add(t.getBilleteraOrigenId());
+            }
+
+            if (t.getBilleteraDestinoId() != null) {
+                billeterasUsadas.add(t.getBilleteraDestinoId());
+            }
         }
 
-        if (t.getBilleteraDestinoId() != null) {
-            billeterasUsadas.add(t.getBilleteraDestinoId());
-        }
+        return billeterasUsadas.size() >= 5;
     }
-
-    return billeterasUsadas.size() >= 5;
-}
 
     public String generarRecomendacionIA(Transaccion txn, NivelRiesgo riesgo) {
         if (riesgo == NivelRiesgo.ALTO) {
@@ -276,10 +280,13 @@ public class DetectorComportamiento {
     }
 
     private void registrarAuditoria(String evento) {
-        String registro = new Date() + " - " + evento;
-        historialAuditoria.agregar(registro);
-        System.out.println("[IA AUDITORIA] " + registro);
+    String registro = new Date() + " - " + evento;
+    historialAuditoria.agregar(registro);
+    System.out.println("[IA AUDITORIA] " + registro);
+    if (auditoriaRepo != null) {
+        auditoriaRepo.save(new com.fintech.billetera.modelos.AuditoriaEvento(registro));
     }
+}
 
     public ListaSimple<String> getHistorialAuditoria() {
         return historialAuditoria;

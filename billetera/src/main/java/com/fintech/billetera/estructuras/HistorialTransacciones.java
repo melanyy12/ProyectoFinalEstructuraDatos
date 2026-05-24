@@ -79,23 +79,32 @@ public class HistorialTransacciones {
     }
 
     public ListaSimple<Transaccion> getTopPorValor(int n) {
-        ListaSimple<Transaccion> todas = getTodas();
-        // Ordenamiento burbuja descendente por valor
-        for (int i = 0; i < todas.getTamanio() - 1; i++) {
-            for (int j = 0; j < todas.getTamanio() - i - 1; j++) {
-                Transaccion a = todas.obtener(j);
-                Transaccion b = todas.obtener(j + 1);
-                if (a.getValor() < b.getValor()) {
-                    // intercambiar creando nueva lista
-                }
+    ListaSimple<Transaccion> todas = getTodas();
+    int tam = todas.getTamanio();
+
+    // Copiar a array para poder hacer intercambios
+    Transaccion[] arr = new Transaccion[tam];
+    for (int i = 0; i < tam; i++) {
+        arr[i] = todas.obtener(i);
+    }
+
+    // Ordenamiento burbuja descendente por valor
+    for (int i = 0; i < tam - 1; i++) {
+        for (int j = 0; j < tam - i - 1; j++) {
+            if (arr[j].getValor() < arr[j + 1].getValor()) {
+                Transaccion temp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
             }
         }
-        ListaSimple<Transaccion> top = new ListaSimple<>();
-        for (int i = 0; i < Math.min(n, todas.getTamanio()); i++) {
-            top.agregar(todas.obtener(i));
-        }
-        return top;
     }
+
+    ListaSimple<Transaccion> top = new ListaSimple<>();
+    for (int i = 0; i < Math.min(n, tam); i++) {
+        top.agregar(arr[i]);
+    }
+    return top;
+}
 
     public ListaSimple<Transaccion> getTodas() {
         ListaSimple<Transaccion> resultado = new ListaSimple<>();
