@@ -125,9 +125,8 @@ public class BilleteraController {
         model.addAttribute("historial", gestor.getHistorial(id));
         model.addAttribute("alertas", gestor.getColaNotificaciones().getNoLeidas());
         model.addAttribute(
-    "programadas",
-    gestor.getColaProgramadas()
-    );
+                "programadas",
+                gestor.getColaProgramadas());
 
         return "usuario";
     }
@@ -249,7 +248,7 @@ public class BilleteraController {
             @RequestParam double monto,
             org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
 
-        Usuario destinoUsuario = gestor.getUsuario(destinoUsuarioId);
+        Usuario destinoUsuario = gestor.getUsuario(destinoUsuarioId.trim());
 
         if (destinoUsuario == null) {
             attrs.addFlashAttribute("toastError", "No existe el usuario destino con ID: " + destinoUsuarioId);
@@ -269,8 +268,7 @@ public class BilleteraController {
         }
 
         Billetera destino = gestor.getBilletera(destinoBilleteraId);
-
-        if (destino == null || !destino.getUsuarioId().equals(destinoUsuarioId)) {
+        if (destino == null || !destino.getUsuarioId().trim().equalsIgnoreCase(destinoUsuarioId.trim())) {
             attrs.addFlashAttribute("toastError", "La billetera destino no pertenece al usuario indicado");
             return "redirect:/usuarios/" + usuarioId;
         }

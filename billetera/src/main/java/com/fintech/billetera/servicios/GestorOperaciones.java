@@ -201,6 +201,17 @@ public class GestorOperaciones {
                         !usuarioId.equals(uidDestino)) {
 
                     grafo.agregarArista(usuarioId, uidDestino, txn.getValor());
+
+                    // Crear registro espejo para el historial del usuario destino
+                    Transaccion txnEspejo = new Transaccion(
+                            txn.getId() + "-R",
+                            txn.getTipo(),
+                            txn.getValor(),
+                            txn.getBilleteraOrigenId(),
+                            txn.getBilleteraDestinoId());
+                    txnEspejo.setEstado(EstadoTransaccion.COMPLETADA);
+                    txnEspejo.setUsuarioId(uidDestino);
+                    transaccionRepo.save(txnEspejo);
                 }
             }
 
