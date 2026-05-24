@@ -474,65 +474,50 @@
                 </div>
 
                 <div id="movimientos" class="action-form">
-                    <h3>Movimientos del usuario</h3>
-                    <p class="section-subtitle">
-                        Historial propio de recargas, retiros, transferencias y operaciones rechazadas.
-                    </p>
+    <h3>Movimientos del usuario</h3>
+    <p class="section-subtitle">
+        Historial propio de recargas, retiros, transferencias y operaciones rechazadas.
+    </p>
 
-                    <div th:if="${not #lists.isEmpty(historial)}" class="movimientos-scroll">
-                        <table class="movimientos-table">
-                            <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Tipo</th>
-                                <th>Monto</th>
-                                <th>Estado</th>
-                                <th>Riesgo</th>
-                            </tr>
-                            </thead>
+    <div th:if="${not #lists.isEmpty(historial)}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span id="pag-info" style="font-size:13px;color:#64748b;font-weight:700;"></span>
+            <div style="display:flex;gap:8px;">
+                <button onclick="cambiarPagina(-1)" id="btn-anterior"
+                        style="background:#e0f2fe;color:#0369a1;border:none;border-radius:10px;
+                               padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer;">
+                    ← Anterior
+                </button>
+                <button onclick="cambiarPagina(1)" id="btn-siguiente"
+                        style="background:#e0f2fe;color:#0369a1;border:none;border-radius:10px;
+                               padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer;">
+                    Siguiente →
+                </button>
+            </div>
+        </div>
 
-                            <tbody>
-                            <tr th:each="txn : ${historial}">
-                                <td th:text="${#dates.format(txn.fecha, 'dd/MM/yyyy HH:mm:ss')}">
-                                    Fecha
-                                </td>
+        <div class="movimientos-scroll">
+            <table class="movimientos-table">
+                <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Monto</th>
+                    <th>Estado</th>
+                    <th>Riesgo</th>
+                </tr>
+                </thead>
+                <tbody id="tabla-movimientos">
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-                                <td>
-                                    <span th:class="'tipo-' + ${txn.tipo.name()}"
-                                          th:text="${txn.tipo}">
-                                        TIPO
-                                    </span>
-                                </td>
+    <p th:if="${#lists.isEmpty(historial)}" class="empty">
+        Este usuario todavía no tiene movimientos registrados.
+    </p>
+</div>
 
-                                <td class="movimiento-monto"
-                                    th:text="'$' + ${#numbers.formatDecimal(txn.valor, 0, 'COMMA', 0, 'POINT')}">
-                                    $0
-                                </td>
-
-                                <td>
-                                    <span class="estado-pill"
-                                          th:classappend="${txn.estado.name() == 'RECHAZADA' ? 'estado-rechazada' : (txn.estado.name() == 'REVERTIDA' ? 'estado-revertida' : 'estado-completada')}"
-                                          th:text="${txn.estado}">
-                                        ESTADO
-                                    </span>
-                                </td>
-
-                                <td>
-                                    <span class="estado-pill"
-                                          th:classappend="${txn.nivelRiesgo != null && txn.nivelRiesgo.name() == 'ALTO' ? 'estado-rechazada' : (txn.nivelRiesgo != null && txn.nivelRiesgo.name() == 'MEDIO' ? 'estado-revertida' : 'estado-completada')}"
-                                          th:text="${txn.nivelRiesgo != null ? txn.nivelRiesgo : 'BAJO'}">
-                                        BAJO
-                                    </span>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <p th:if="${#lists.isEmpty(historial)}" class="empty">
-                        Este usuario todavía no tiene movimientos registrados.
-                    </p>
-                </div>
             </div>
         </div>
     </div>
@@ -814,5 +799,67 @@ async function enviarMensaje() {
 }
 </script>
 <script th:src="@{/js/validaciones.js}"></script>
+
+<script th:inline="javascript">
+    const movimientos = /*[[${historial}]]*/ [];
+    const porPagina = 5;
+    let paginaActual = 0;
+
+    function renderizarTabla() {
+        const tbody = document.getElementById('tabla-movimientos');
+        const info = document.getElementById('pag-info');
+        const btnAnterior = document.getElementById('btn-anterior');
+        const btnSiguiente = document.getElementById('btn-siguiente');
+
+        if (!tbody || movimientos.length === 0) return;
+
+        const inicio = paginaActual * porPagina;
+        const fin = Math.min(inicio + porPagina, movimientos.length);
+        const pagina = movimientos.slice(inicio, fin);
+        const totalPaginas = Math.ceil(movimientos.length / porPagina);
+
+        tbody.innerHTML = '';
+
+        pagina.forEach(function (txn) {
+            const fecha = new Date(txn.fecha).toLocaleString('es-CO');
+            const monto = new Intl.NumberFormat('es-CO').format(txn.valor);
+            const riesgo = txn.nivelRiesgo || 'BAJO';
+
+            const colorTipo = txn.tipo === 'RECARGA' ? '#16a34a' :
+                              txn.tipo === 'RETIRO' ? '#dc2626' : '#2563eb';
+
+            const colorEstado = txn.estado === 'RECHAZADA' ? 'estado-rechazada' :
+                                txn.estado === 'REVERTIDA' ? 'estado-revertida' : 'estado-completada';
+
+            const colorRiesgo = riesgo === 'ALTO' ? 'estado-rechazada' :
+                                riesgo === 'MEDIO' ? 'estado-revertida' : 'estado-completada';
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${fecha}</td>
+                    <td><span style="color:${colorTipo};font-weight:900;">${txn.tipo}</span></td>
+                    <td class="movimiento-monto">$${monto}</td>
+                    <td><span class="estado-pill ${colorEstado}">${txn.estado}</span></td>
+                    <td><span class="estado-pill ${colorRiesgo}">${riesgo}</span></td>
+                </tr>`;
+        });
+
+        info.textContent = `Página ${paginaActual + 1} de ${totalPaginas} — ${movimientos.length} movimientos`;
+        btnAnterior.disabled = paginaActual === 0;
+        btnSiguiente.disabled = paginaActual >= totalPaginas - 1;
+        btnAnterior.style.opacity = paginaActual === 0 ? '0.4' : '1';
+        btnSiguiente.style.opacity = paginaActual >= totalPaginas - 1 ? '0.4' : '1';
+    }
+
+    function cambiarPagina(direccion) {
+        const totalPaginas = Math.ceil(movimientos.length / porPagina);
+        paginaActual = Math.max(0, Math.min(paginaActual + direccion, totalPaginas - 1));
+        renderizarTabla();
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        renderizarTabla();
+    });
+</script>
 </body>
 </html>
