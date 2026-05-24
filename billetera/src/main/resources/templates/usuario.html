@@ -938,6 +938,19 @@ async function enviarMensaje() {
         modalContenido.innerHTML = html;
         modal.style.display = 'flex';
     }
+     document.addEventListener("DOMContentLoaded", function () {
+        const toasts = document.querySelectorAll(".toast-center");
+
+        toasts.forEach(function (toast) {
+            setTimeout(function () {
+                toast.classList.add("hide");
+
+                setTimeout(function () {
+                    toast.remove();
+                }, 300);
+            }, 1000);
+        });
+    });
 </script>
 
 <!-- Modal historial por billetera -->
