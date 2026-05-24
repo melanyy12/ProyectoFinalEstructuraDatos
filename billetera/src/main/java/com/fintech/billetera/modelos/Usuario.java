@@ -25,15 +25,16 @@ public class Usuario {
     private Date fechaRegistro;
     private int puntosTotales;
     @Transient
-    private ListaSimple<Beneficio> beneficiosCanjeados;
+    private ListaSimple<Beneficio> beneficiosCanjeados = new ListaSimple<>();
 
     @Enumerated(EnumType.STRING)
     private NivelUsuario nivel;
 
     @Transient
-private List<Billetera> billeteras = new ArrayList<>();
+    private List<Billetera> billeteras = new ArrayList<>();
 
-    public Usuario() {}
+    public Usuario() {
+    }
 
     public Usuario(String id, String nombre, String email, String telefono) {
         this.id = id;
@@ -48,7 +49,8 @@ private List<Billetera> billeteras = new ArrayList<>();
     }
 
     public void agregarBilletera(Billetera billetera) {
-        if (this.billeteras == null) this.billeteras = new ArrayList<>();
+        if (this.billeteras == null)
+            this.billeteras = new ArrayList<>();
         this.billeteras.add(billetera);
     }
 
@@ -63,34 +65,79 @@ private List<Billetera> billeteras = new ArrayList<>();
     }
 
     public void agregarBeneficioCanjeado(Beneficio beneficio) {
-    beneficiosCanjeados.agregar(beneficio);
+        beneficiosCanjeados.agregar(beneficio);
     }
 
     public ListaSimple<Beneficio> getBeneficiosCanjeados() {
-    return beneficiosCanjeados;
+        return beneficiosCanjeados;
     }
 
     public void actualizarNivel() {
-        if (puntosTotales <= 500) nivel = NivelUsuario.BRONCE;
-        else if (puntosTotales <= 1000) nivel = NivelUsuario.PLATA;
-        else if (puntosTotales <= 5000) nivel = NivelUsuario.ORO;
-        else nivel = NivelUsuario.PLATINO;
+        if (puntosTotales <= 500)
+            nivel = NivelUsuario.BRONCE;
+        else if (puntosTotales <= 1000)
+            nivel = NivelUsuario.PLATA;
+        else if (puntosTotales <= 5000)
+            nivel = NivelUsuario.ORO;
+        else
+            nivel = NivelUsuario.PLATINO;
     }
 
-    public String getId() { return id; }
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-    public String getTelefono() { return telefono; }
-    public void setTelefono(String telefono) { this.telefono = telefono; }
-    public Date getFechaRegistro() { return fechaRegistro; }
-    public int getPuntosTotales() { return puntosTotales; }
-    public void setPuntosTotales(int puntosTotales) { this.puntosTotales = puntosTotales; }
-    public NivelUsuario getNivel() { return nivel; }
-    public void setNivel(NivelUsuario nivel) { this.nivel = nivel; }
-    public List<Billetera> getBilleteras() { return billeteras; }
-    public void setBilleteras(List<Billetera> billeteras) { this.billeteras = billeteras; }
+    public String getId() {
+        return id;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getTelefono() {
+        return telefono;
+    }
+
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
+    }
+
+    public Date getFechaRegistro() {
+        return fechaRegistro;
+    }
+
+    public int getPuntosTotales() {
+        return puntosTotales;
+    }
+
+    public void setPuntosTotales(int puntosTotales) {
+        this.puntosTotales = puntosTotales;
+    }
+
+    public NivelUsuario getNivel() {
+        return nivel;
+    }
+
+    public void setNivel(NivelUsuario nivel) {
+        this.nivel = nivel;
+    }
+
+    public List<Billetera> getBilleteras() {
+        return billeteras;
+    }
+
+    public void setBilleteras(List<Billetera> billeteras) {
+        this.billeteras = billeteras;
+    }
 
     @Override
     public String toString() {

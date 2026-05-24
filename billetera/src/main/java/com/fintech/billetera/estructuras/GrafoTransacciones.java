@@ -87,17 +87,20 @@ public class GrafoTransacciones {
         java.util.Iterator<String> it = claves.iterator();
         while (it.hasNext()) {
             String id = it.next();
-            if (detectarCicloRec(id, visto, enPila)) return true;
+            if (detectarCicloRec(id, visto, enPila))
+                return true;
         }
         return false;
     }
 
     private boolean detectarCicloRec(String id, MapaHash<String, Boolean> visto,
-                                      MapaHash<String, Boolean> enPila) {
+            MapaHash<String, Boolean> enPila) {
         Boolean enP = enPila.obtener(id);
-        if (enP != null && enP) return true;
+        if (enP != null && enP)
+            return true;
         Boolean vis = visto.obtener(id);
-        if (vis != null && vis) return false;
+        if (vis != null && vis)
+            return false;
         visto.poner(id, true);
         enPila.poner(id, true);
         ListaSimple<AristaGrafo> vecinos = listaAdyacencia.obtener(id);
@@ -105,7 +108,8 @@ public class GrafoTransacciones {
             java.util.Iterator<AristaGrafo> it = vecinos.iterator();
             while (it.hasNext()) {
                 AristaGrafo arista = it.next();
-                if (detectarCicloRec(arista.getDestinoId(), visto, enPila)) return true;
+                if (detectarCicloRec(arista.getDestinoId(), visto, enPila))
+                    return true;
             }
         }
         enPila.poner(id, false);
@@ -114,18 +118,51 @@ public class GrafoTransacciones {
 
     public ListaSimple<AristaGrafo> getRutasFrecuentes(String usuarioId) {
         ListaSimple<AristaGrafo> aristas = listaAdyacencia.obtener(usuarioId);
-        if (aristas == null) return new ListaSimple<>();
-        return aristas;
+        if (aristas == null)
+            return new ListaSimple<>();
+
+        int tam = aristas.getTamanio();
+        AristaGrafo[] arr = new AristaGrafo[tam];
+        for (int i = 0; i < tam; i++) {
+            arr[i] = aristas.obtener(i);
+        }
+
+        // Ordenamiento burbuja descendente por frecuencia
+        for (int i = 0; i < tam - 1; i++) {
+            for (int j = 0; j < tam - i - 1; j++) {
+                if (arr[j].getFrecuencia() < arr[j + 1].getFrecuencia()) {
+                    AristaGrafo temp = arr[j];
+                    arr[j] = arr[j + 1];
+                    arr[j + 1] = temp;
+                }
+            }
+        }
+
+        ListaSimple<AristaGrafo> resultado = new ListaSimple<>();
+        for (int i = 0; i < tam; i++) {
+            resultado.agregar(arr[i]);
+        }
+        return resultado;
     }
 
-    public MapaHash<String, ListaSimple<AristaGrafo>> getListaAdyacencia() { return listaAdyacencia; }
-    public MapaHash<String, Usuario> getVertices() { return vertices; }
-    public int getTotalVertices() { return vertices.getTamanio(); }
+    public MapaHash<String, ListaSimple<AristaGrafo>> getListaAdyacencia() {
+        return listaAdyacencia;
+    }
+
+    public MapaHash<String, Usuario> getVertices() {
+        return vertices;
+    }
+
+    public int getTotalVertices() {
+        return vertices.getTamanio();
+    }
+
     public int getTotalAristas() {
         int total = 0;
         ListaSimple<ListaSimple<AristaGrafo>> listas = listaAdyacencia.valores();
         java.util.Iterator<ListaSimple<AristaGrafo>> it = listas.iterator();
-        while (it.hasNext()) total += it.next().getTamanio();
+        while (it.hasNext())
+            total += it.next().getTamanio();
         return total;
     }
 }
