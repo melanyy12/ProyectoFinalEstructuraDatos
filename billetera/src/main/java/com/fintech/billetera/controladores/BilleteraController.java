@@ -53,7 +53,7 @@ public class BilleteraController {
             @RequestParam String email,
             @RequestParam String telefono) {
         Usuario u = new Usuario(id, nombre, email, telefono);
-        gestor.actualizarUsuario(u);
+        gestor.registrarUsuario(u);
         return "redirect:/";
     }
 
@@ -455,12 +455,12 @@ public class BilleteraController {
         if (auditorias.isEmpty()) {
             for (Transaccion txn : transaccionesRiesgo) {
                 auditorias.add(
-                        txn.getFecha() +
-                                " - IA detectó riesgo " + txn.getNivelRiesgo() +
-                                " en la transacción " + txn.getId() +
-                                " del usuario " + txn.getUsuarioId() +
-                                ". Tipo: " + txn.getTipo() +
-                                ". Monto: $" + txn.getValor());
+                        txn.getFecha()
+                                + " - IA detectó riesgo " + txn.getNivelRiesgo()
+                                + " en la transacción " + txn.getId()
+                                + " del usuario " + txn.getUsuarioId()
+                                + ". Tipo: " + txn.getTipo()
+                                + ". Monto: $" + txn.getValor());
             }
         }
 
