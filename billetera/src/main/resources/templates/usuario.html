@@ -96,6 +96,16 @@
                         $0
                     </span>
 
+                    <button type="button"
+                        th:data-id="${billetera.id}"
+                        th:data-nombre="${billetera.nombre}"
+                        onclick="verMovimientosBilletera(this.dataset.id, this.dataset.nombre)"
+                        style="width:100%;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;
+                        border-radius:10px;padding:8px;font-size:13px;
+                        font-weight:800;cursor:pointer;margin-bottom:6px;">
+                         Ver movimientos
+                    </button>
+
                     <form th:action="@{/billetera/estado}" method="post" style="margin-top:10px;">
                         <input type="hidden" name="billeteraId" th:value="${billetera.id}"/>
                         <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
@@ -861,5 +871,91 @@ async function enviarMensaje() {
         renderizarTabla();
     });
 </script>
+<script th:inline="javascript">
+    const todosMovimientos = /*[[${historial}]]*/ [];
+
+    function verMovimientosBilletera(billeteraId, billeteraNombre) {
+        const filtrados = todosMovimientos.filter(function(txn) {
+            return txn.billeteraOrigenId === billeteraId ||
+                   txn.billeteraDestinoId === billeteraId;
+        });
+
+        let html = `<h3 style="margin-bottom:8px;">📋 ${billeteraNombre}</h3>
+                    <p style="font-size:13px;color:#64748b;margin-bottom:14px;">
+                        ${filtrados.length} movimiento(s) registrado(s)
+                    </p>`;
+
+        if (filtrados.length === 0) {
+            html += `<p style="color:#64748b;background:#f8fafc;border:1px dashed #cbd5e1;
+                               border-radius:14px;padding:20px;text-align:center;font-size:14px;">
+                        Esta billetera no tiene movimientos registrados.
+                    </p>`;
+        } else {
+            html += `<div style="overflow-x:auto;border:1px solid #e5e7eb;border-radius:16px;">
+                        <table style="width:100%;border-collapse:collapse;min-width:500px;">
+                            <thead>
+                                <tr style="background:#f8fafc;">
+                                    <th style="text-align:left;padding:12px;color:#64748b;font-size:12px;
+                                               text-transform:uppercase;border-bottom:1px solid #e5e7eb;">Fecha</th>
+                                    <th style="text-align:left;padding:12px;color:#64748b;font-size:12px;
+                                               text-transform:uppercase;border-bottom:1px solid #e5e7eb;">Tipo</th>
+                                    <th style="text-align:left;padding:12px;color:#64748b;font-size:12px;
+                                               text-transform:uppercase;border-bottom:1px solid #e5e7eb;">Monto</th>
+                                    <th style="text-align:left;padding:12px;color:#64748b;font-size:12px;
+                                               text-transform:uppercase;border-bottom:1px solid #e5e7eb;">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+
+            filtrados.forEach(function(txn) {
+                const fecha = new Date(txn.fecha).toLocaleString('es-CO');
+                const monto = new Intl.NumberFormat('es-CO').format(txn.valor);
+                const colorTipo = txn.tipo === 'RECARGA' ? '#16a34a' :
+                                  txn.tipo === 'RETIRO' ? '#dc2626' : '#2563eb';
+                const colorEstado = txn.estado === 'RECHAZADA' ? '#fee2e2' :
+                                    txn.estado === 'REVERTIDA' ? '#fef3c7' : '#dcfce7';
+                const colorEstadoTexto = txn.estado === 'RECHAZADA' ? '#991b1b' :
+                                         txn.estado === 'REVERTIDA' ? '#92400e' : '#166534';
+
+                html += `<tr style="border-bottom:1px solid #f1f5f9;">
+                            <td style="padding:12px;font-size:13px;color:#64748b;">${fecha}</td>
+                            <td style="padding:12px;font-weight:900;color:${colorTipo};">${txn.tipo}</td>
+                            <td style="padding:12px;font-weight:900;color:#0f172a;">$${monto}</td>
+                            <td style="padding:12px;">
+                                <span style="background:${colorEstado};color:${colorEstadoTexto};
+                                             padding:4px 10px;border-radius:999px;font-size:11px;
+                                             font-weight:900;">${txn.estado}</span>
+                            </td>
+                        </tr>`;
+            });
+
+            html += `</tbody></table></div>`;
+        }
+
+        // Mostrar en modal
+        const modal = document.getElementById('modal-billetera');
+        const modalContenido = document.getElementById('modal-contenido');
+        modalContenido.innerHTML = html;
+        modal.style.display = 'flex';
+    }
+</script>
+
+<!-- Modal historial por billetera -->
+<div id="modal-billetera"
+     style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.5);
+            z-index:9998;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:#ffffff;border-radius:22px;padding:26px;max-width:680px;
+                width:100%;max-height:80vh;overflow-y:auto;
+                box-shadow:0 25px 60px rgba(15,23,42,0.25);">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+            <button onclick="document.getElementById('modal-billetera').style.display='none'"
+                    style="background:#f1f5f9;border:none;border-radius:10px;padding:8px 14px;
+                           font-size:13px;font-weight:800;cursor:pointer;color:#475569;">
+                ✕ Cerrar
+            </button>
+        </div>
+        <div id="modal-contenido"></div>
+    </div>
+</div>
 </body>
 </html>
