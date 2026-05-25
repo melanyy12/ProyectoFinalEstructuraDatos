@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-
+import com.fintech.billetera.modelos.EstadoBilletera;
 import com.fintech.billetera.estructuras.ArbolFidelizacion;
 import com.fintech.billetera.estructuras.ColaNotificaciones;
 import com.fintech.billetera.estructuras.PilaReversiones;
@@ -171,37 +171,42 @@ public String registrarUsuario(@RequestParam String id,
         return "redirect:/usuarios/" + usuarioId;
     }
 
-    @PostMapping("/transaccion/retiro")
-    public String retirar(@RequestParam String billeteraId,
-            @RequestParam double monto,
-            @RequestParam String usuarioId,
-            org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+  @PostMapping("/transaccion/retiro")
+public String retirar(@RequestParam String billeteraId,
+        @RequestParam double monto,
+        @RequestParam String usuarioId,
+        org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
 
-        Billetera billetera = gestor.getBilletera(billeteraId);
+    Billetera billetera = gestor.getBilletera(billeteraId);
 
-        if (billetera == null) {
-            attrs.addFlashAttribute("toastError", "No existe la billetera con ID: " + billeteraId);
-            return "redirect:/usuarios/" + usuarioId;
-        }
-
-        if (!billeteraPerteneceAUsuario(billetera, usuarioId)) {
-            attrs.addFlashAttribute("toastError", "No puedes retirar de una billetera que no pertenece a este usuario");
-            return "redirect:/usuarios/" + usuarioId;
-        }
-
-        Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
-                TipoTransaccion.RETIRO, monto, billeteraId, null);
-
-        boolean exito = gestor.procesarTransaccion(t);
-
-        if (exito && t.getEstado() != EstadoTransaccion.RECHAZADA) {
-            attrs.addFlashAttribute("toast", "Retiro realizado correctamente");
-        } else {
-            attrs.addFlashAttribute("toastError", "Retiro rechazado: saldo insuficiente");
-        }
-
+    if (billetera == null) {
+        attrs.addFlashAttribute("toastError", "No existe la billetera con ID: " + billeteraId);
         return "redirect:/usuarios/" + usuarioId;
     }
+
+    if (!billeteraPerteneceAUsuario(billetera, usuarioId)) {
+        attrs.addFlashAttribute("toastError", "No puedes retirar de una billetera que no pertenece a este usuario");
+        return "redirect:/usuarios/" + usuarioId;
+    }
+
+    if (billetera.getEstado() != EstadoBilletera.ACTIVA) {
+        attrs.addFlashAttribute("toastError", "No se puede retirar: la billetera está bloqueada o inactiva");
+        return "redirect:/usuarios/" + usuarioId;
+    }
+
+    Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
+            TipoTransaccion.RETIRO, monto, billeteraId, null);
+
+    boolean exito = gestor.procesarTransaccion(t);
+
+    if (exito && t.getEstado() != EstadoTransaccion.RECHAZADA) {
+        attrs.addFlashAttribute("toast", "Retiro realizado correctamente");
+    } else {
+        attrs.addFlashAttribute("toastError", "Retiro rechazado: saldo insuficiente");
+    }
+
+    return "redirect:/usuarios/" + usuarioId;
+}
 
     @PostMapping("/transaccion/transferencia")
     public String transferir(@RequestParam String origenId,
@@ -233,6 +238,10 @@ public String registrarUsuario(@RequestParam String id,
                     "Para transferir entre billeteras, la billetera destino también debe ser de este usuario");
             return "redirect:/usuarios/" + usuarioId;
         }
+        if (origen.getEstado() != EstadoBilletera.ACTIVA) {
+    attrs.addFlashAttribute("toastError", "No se puede transferir: la billetera origen está bloqueada o inactiva");
+    return "redirect:/usuarios/" + usuarioId;
+}
 
         Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
                 TipoTransaccion.TRANSFERENCIA, monto, origenId, destinoId);
@@ -281,7 +290,10 @@ public String registrarUsuario(@RequestParam String id,
             attrs.addFlashAttribute("toastError", "La billetera destino no pertenece al usuario indicado");
             return "redirect:/usuarios/" + usuarioId;
         }
-
+if (origen.getEstado() != EstadoBilletera.ACTIVA) {
+    attrs.addFlashAttribute("toastError", "No se puede transferir: la billetera origen está bloqueada o inactiva");
+    return "redirect:/usuarios/" + usuarioId;
+}
         Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
                 TipoTransaccion.TRANSFERENCIA, monto, origenId, destinoBilleteraId);
 

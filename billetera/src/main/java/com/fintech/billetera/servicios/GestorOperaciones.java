@@ -391,34 +391,44 @@ public class GestorOperaciones {
 
     public void ejecutarProgramadas() {
 
-        while (!colaProgramadas.estaVacia() &&
-                colaProgramadas.peek().estaListaParaEjecutar()) {
+    while (!colaProgramadas.estaVacia() &&
+            colaProgramadas.peek().estaListaParaEjecutar()) {
 
-            TxnProgramada txn = colaProgramadas.poll();
+        TxnProgramada txn = colaProgramadas.poll();
 
-            procesarTransaccion(txn);
+        Transaccion transaccion = new Transaccion(
+                txn.getId(),
+                txn.getTipo(),
+                txn.getValor(),
+                txn.getBilleteraOrigenId(),
+                txn.getBilleteraDestinoId()
+        );
 
-            if (txn.getFrecuencia() == Frecuencia.SEMANAL) {
+        transaccion.setUsuarioId(txn.getUsuarioId());
 
-                txn.setFechaEjecucion(
-                        new java.util.Date(
-                                txn.getFechaEjecucion().getTime()
-                                        + (7L * 24 * 60 * 60 * 1000)));
+        procesarTransaccion(transaccion);
 
-                colaProgramadas.agregar(txn);
-            }
+        if (txn.getFrecuencia() == Frecuencia.SEMANAL) {
 
-            if (txn.getFrecuencia() == Frecuencia.MENSUAL) {
+            txn.setFechaEjecucion(
+                    new java.util.Date(
+                            txn.getFechaEjecucion().getTime()
+                                    + (7L * 24 * 60 * 60 * 1000)));
 
-                txn.setFechaEjecucion(
-                        new java.util.Date(
-                                txn.getFechaEjecucion().getTime()
-                                        + (30L * 24 * 60 * 60 * 1000)));
+            colaProgramadas.agregar(txn);
+        }
 
-                colaProgramadas.agregar(txn);
-            }
+        if (txn.getFrecuencia() == Frecuencia.MENSUAL) {
+
+            txn.setFechaEjecucion(
+                    new java.util.Date(
+                            txn.getFechaEjecucion().getTime()
+                                    + (30L * 24 * 60 * 60 * 1000)));
+
+            colaProgramadas.agregar(txn);
         }
     }
+}
 
     @Scheduled(fixedDelay = 60000)
     public void ejecutarProgramadasAutomaticamente() {
