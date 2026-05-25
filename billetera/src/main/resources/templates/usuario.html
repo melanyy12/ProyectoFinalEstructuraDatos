@@ -344,43 +344,53 @@
                     </form>
                 </div>
 
-                <div id="externa" class="action-form">
-                    <h3>Transferir a otro usuario</h3>
-                    <p class="section-subtitle">
-                        Escribe el ID del usuario destino y el sistema cargará sus billeteras automáticamente.
-                    </p>
+              <div id="form-externa" class="action-form">
+  <h3>Transferir a otro usuario</h3>
+  <p class="section-subtitle">
+    Escribe el ID del usuario destino y el sistema cargará sus billeteras automáticamente.
+  </p>
 
-                    <form th:action="@{/transaccion/transferencia-externa}" method="post">
-  <input type="hidden" name="usuarioId" th:value="${usuario.id}">
+  <form th:action="@{/transaccion/transferencia-externa}" method="post" class="form-grid">
+    <input type="hidden" name="usuarioId" th:value="${usuario.id}">
 
-  <label>Billetera origen</label>
-  <select name="origenId" required>
-    <option value="">Selecciona billetera origen</option>
-    <option th:each="billetera : ${usuario.billeteras}"
-            th:value="${billetera.id}"
-            th:text="${billetera.nombre + ' - ' + billetera.tipo + ' - $' + billetera.saldo}">
-    </option>
-  </select>
+    <div class="form-group">
+      <label>Mi billetera origen</label>
+      <select name="origenId" required>
+        <option value="">Selecciona mi billetera</option>
+        <option th:each="billetera : ${usuario.billeteras}"
+                th:value="${billetera.id}"
+                th:text="${billetera.nombre + ' - ' + billetera.tipo + ' - $' + billetera.saldo}">
+        </option>
+      </select>
+    </div>
 
-  <label>ID Usuario destino</label>
-  <input
-    type="text"
-    name="destinoUsuarioId"
-    id="destinoUsuarioId"
-    placeholder="Escribe el ID para buscar sus billeteras."
-    required>
+    <div class="form-group">
+      <label>ID usuario destino</label>
+      <input
+        type="text"
+        name="destinoUsuarioId"
+        id="destinoUsuarioId"
+        placeholder="Escribe el ID para buscar sus billeteras."
+        required>
+    </div>
 
-  <label>Billetera destino</label>
-  <select name="destinoBilleteraId" id="destinoBilleteraId" required>
-    <option value="">Primero escribe el ID del usuario destino</option>
-  </select>
+    <div class="form-group">
+      <label>Billetera destino</label>
+      <select name="destinoBilleteraId" id="destinoBilleteraId" required>
+        <option value="">Primero escribe el ID del usuario destino</option>
+      </select>
+    </div>
 
-  <label>Monto</label>
-  <input type="number" name="monto" min="1" step="0.01" required>
+    <div class="form-group">
+      <label>Monto</label>
+      <input type="number" name="monto" min="1" step="0.01" required>
+    </div>
 
-  <button type="submit">Transferir</button>
-</form>
-                </div>
+    <div class="form-group full">
+      <button type="submit" class="btn btn-purple">Transferir externo</button>
+    </div>
+  </form>
+</div>
 
                 <div id="programar" class="action-form">
                     <h3>Programar transacción</h3>
