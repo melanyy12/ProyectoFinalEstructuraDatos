@@ -81,60 +81,65 @@
 
                 <div th:if="${not #lists.isEmpty(usuario.billeteras)}" class="wallet-list">
                     <div th:each="billetera : ${usuario.billeteras}" class="billetera-card"
-                     th:style="${billetera.estado.name() == 'BLOQUEADA' ? 'opacity:0.6;border-color:#fecaca;' : (billetera.estado.name() == 'INACTIVA' ? 'opacity:0.75;border-color:#e2e8f0;' : '')}">
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-                        <h4 th:text="${billetera.nombre}">Nombre</h4>
-                        <span th:text="${billetera.estado}"
-                              th:style="${billetera.estado.name() == 'ACTIVA' ? 'background:#dcfce7;color:#166534;' : (billetera.estado.name() == 'BLOQUEADA' ? 'background:#fee2e2;color:#991b1b;' : 'background:#f1f5f9;color:#475569;')}"
-                              style="font-size:10px;font-weight:900;padding:3px 8px;border-radius:999px;">
-                            ESTADO
+                         th:style="${billetera.estado.name() == 'BLOQUEADA' ? 'opacity:0.6;border-color:#fecaca;' : (billetera.estado.name() == 'INACTIVA' ? 'opacity:0.75;border-color:#e2e8f0;' : '')}">
+
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                            <h4 th:text="${billetera.nombre}">Nombre</h4>
+                            <span th:text="${billetera.estado}"
+                                  th:style="${billetera.estado.name() == 'ACTIVA' ? 'background:#dcfce7;color:#166534;' : (billetera.estado.name() == 'BLOQUEADA' ? 'background:#fee2e2;color:#991b1b;' : 'background:#f1f5f9;color:#475569;')}"
+                                  style="font-size:10px;font-weight:900;padding:3px 8px;border-radius:999px;">
+                                ESTADO
+                            </span>
+                        </div>
+
+                        <p th:text="${billetera.tipo}">Tipo</p>
+                        <p th:text="'ID: ' + ${billetera.id}">ID</p>
+
+                        <span class="saldo"
+                              th:text="'$' + ${#numbers.formatDecimal(billetera.saldo,0,'COMMA',0,'POINT')}">
+                            $0
                         </span>
-                    </div>
-                    <p th:text="${billetera.tipo}">Tipo</p>
-                    <p th:text="'ID: ' + ${billetera.id}">ID</p>
-                    <span class="saldo"
-                          th:text="'$' + ${#numbers.formatDecimal(billetera.saldo,0,'COMMA',0,'POINT')}">
-                        $0
-                    </span>
 
-                    <button type="button"
-                        th:data-id="${billetera.id}"
-                        th:data-nombre="${billetera.nombre}"
-                        onclick="verMovimientosBilletera(this.dataset.id, this.dataset.nombre)"
-                        style="width:100%;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;
-                        border-radius:10px;padding:8px;font-size:13px;
-                        font-weight:800;cursor:pointer;margin-bottom:6px;">
-                         Ver movimientos
-                    </button>
-
-                    <form th:action="@{/billetera/estado}" method="post" style="margin-top:10px;">
-                        <input type="hidden" name="billeteraId" th:value="${billetera.id}"/>
-                        <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
-                        <select name="estado"
-                                style="width:100%;background:#f8fafc;border:1px solid #cbd5e1;
-                                       border-radius:10px;padding:8px 10px;font-size:13px;
-                                       color:#0f172a;margin-bottom:6px;">
-                            <option value="ACTIVA"
-                                    th:selected="${billetera.estado.name() == 'ACTIVA'}">
-                                 Activa
-                            </option>
-                            <option value="INACTIVA"
-                                    th:selected="${billetera.estado.name() == 'INACTIVA'}">
-                                 Inactiva
-                            </option>
-                            <option value="BLOQUEADA"
-                                    th:selected="${billetera.estado.name() == 'BLOQUEADA'}">
-                                 Bloqueada
-                            </option>
-                        </select>
-                        <button type="submit"
-                                style="width:100%;background:#e0f2fe;color:#0369a1;border:none;
-                                       border-radius:10px;padding:8px;font-size:13px;
-                                       font-weight:800;cursor:pointer;">
-                            Cambiar estado
+                        <button type="button"
+                                th:data-id="${billetera.id}"
+                                th:data-nombre="${billetera.nombre}"
+                                onclick="verMovimientosBilletera(this.dataset.id, this.dataset.nombre)"
+                                style="width:100%;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;
+                                border-radius:10px;padding:8px;font-size:13px;
+                                font-weight:800;cursor:pointer;margin-bottom:6px;">
+                            Ver movimientos
                         </button>
-                    </form>
-                </div>
+
+                        <form th:action="@{/billetera/estado}" method="post" style="margin-top:10px;">
+                            <input type="hidden" name="billeteraId" th:value="${billetera.id}"/>
+                            <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
+
+                            <select name="estado"
+                                    style="width:100%;background:#f8fafc;border:1px solid #cbd5e1;
+                                           border-radius:10px;padding:8px 10px;font-size:13px;
+                                           color:#0f172a;margin-bottom:6px;">
+                                <option value="ACTIVA"
+                                        th:selected="${billetera.estado.name() == 'ACTIVA'}">
+                                    Activa
+                                </option>
+                                <option value="INACTIVA"
+                                        th:selected="${billetera.estado.name() == 'INACTIVA'}">
+                                    Inactiva
+                                </option>
+                                <option value="BLOQUEADA"
+                                        th:selected="${billetera.estado.name() == 'BLOQUEADA'}">
+                                    Bloqueada
+                                </option>
+                            </select>
+
+                            <button type="submit"
+                                    style="width:100%;background:#e0f2fe;color:#0369a1;border:none;
+                                           border-radius:10px;padding:8px;font-size:13px;
+                                           font-weight:800;cursor:pointer;">
+                                Cambiar estado
+                            </button>
+                        </form>
+                    </div>
                 </div>
 
                 <p th:if="${#lists.isEmpty(usuario.billeteras)}" class="empty">
@@ -344,53 +349,53 @@
                     </form>
                 </div>
 
-              <div id="form-externa" class="action-form">
-  <h3>Transferir a otro usuario</h3>
-  <p class="section-subtitle">
-    Escribe el ID del usuario destino y el sistema cargará sus billeteras automáticamente.
-  </p>
+                <div id="externa" class="action-form">
+                    <h3>Transferir a otro usuario</h3>
+                    <p class="section-subtitle">
+                        Escribe el ID del usuario destino y el sistema cargará sus billeteras automáticamente.
+                    </p>
 
-  <form th:action="@{/transaccion/transferencia-externa}" method="post" class="form-grid">
-    <input type="hidden" name="usuarioId" th:value="${usuario.id}">
+                    <form th:action="@{/transaccion/transferencia-externa}" method="post">
+                        <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
 
-    <div class="form-group">
-      <label>Mi billetera origen</label>
-      <select name="origenId" required>
-        <option value="">Selecciona mi billetera</option>
-        <option th:each="billetera : ${usuario.billeteras}"
-                th:value="${billetera.id}"
-                th:text="${billetera.nombre + ' - ' + billetera.tipo + ' - $' + billetera.saldo}">
-        </option>
-      </select>
-    </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Mi billetera origen</label>
+                                <select name="origenId" required>
+                                    <option value="">Selecciona mi billetera</option>
+                                    <option th:each="b : ${usuario.billeteras}"
+                                            th:value="${b.id}"
+                                            th:text="${b.nombre + ' - ' + b.tipo + ' - $' + #numbers.formatDecimal(b.saldo,0,'COMMA',0,'POINT')}">
+                                        Billetera
+                                    </option>
+                                </select>
+                            </div>
 
-    <div class="form-group">
-      <label>ID usuario destino</label>
-      <input
-        type="text"
-        name="destinoUsuarioId"
-        id="destinoUsuarioId"
-        placeholder="Escribe el ID para buscar sus billeteras."
-        required>
-    </div>
+                            <div class="form-group">
+                                <label>ID usuario destino</label>
+                                <input type="text"
+                                       name="destinoUsuarioId"
+                                       id="destinoUsuarioId"
+                                       placeholder="Escribe el ID para buscar sus billeteras."
+                                       required/>
+                            </div>
 
-    <div class="form-group">
-      <label>Billetera destino</label>
-      <select name="destinoBilleteraId" id="destinoBilleteraId" required>
-        <option value="">Primero escribe el ID del usuario destino</option>
-      </select>
-    </div>
+                            <div class="form-group">
+                                <label>Billetera destino</label>
+                                <select name="destinoBilleteraId" id="destinoBilleteraId" required>
+                                    <option value="">Primero escribe el ID del usuario destino</option>
+                                </select>
+                            </div>
 
-    <div class="form-group">
-      <label>Monto</label>
-      <input type="number" name="monto" min="1" step="0.01" required>
-    </div>
+                            <div class="form-group">
+                                <label>Monto</label>
+                                <input type="number" name="monto" placeholder="50000" min="1" step="0.01" required/>
+                            </div>
+                        </div>
 
-    <div class="form-group full">
-      <button type="submit" class="btn btn-purple">Transferir externo</button>
-    </div>
-  </form>
-</div>
+                        <button type="submit" class="btn btn-purple">Transferir externo</button>
+                    </form>
+                </div>
 
                 <div id="programar" class="action-form">
                     <h3>Programar transacción</h3>
@@ -481,50 +486,49 @@
                 </div>
 
                 <div id="movimientos" class="action-form">
-    <h3>Movimientos del usuario</h3>
-    <p class="section-subtitle">
-        Historial propio de recargas, retiros, transferencias y operaciones rechazadas.
-    </p>
+                    <h3>Movimientos del usuario</h3>
+                    <p class="section-subtitle">
+                        Historial propio de recargas, retiros, transferencias y operaciones rechazadas.
+                    </p>
 
-    <div th:if="${not #lists.isEmpty(historial)}">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <span id="pag-info" style="font-size:13px;color:#64748b;font-weight:700;"></span>
-            <div style="display:flex;gap:8px;">
-                <button onclick="cambiarPagina(-1)" id="btn-anterior"
-                        style="background:#e0f2fe;color:#0369a1;border:none;border-radius:10px;
-                               padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer;">
-                    ← Anterior
-                </button>
-                <button onclick="cambiarPagina(1)" id="btn-siguiente"
-                        style="background:#e0f2fe;color:#0369a1;border:none;border-radius:10px;
-                               padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer;">
-                    Siguiente →
-                </button>
-            </div>
-        </div>
+                    <div th:if="${not #lists.isEmpty(historial)}">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                            <span id="pag-info" style="font-size:13px;color:#64748b;font-weight:700;"></span>
+                            <div style="display:flex;gap:8px;">
+                                <button onclick="cambiarPagina(-1)" id="btn-anterior"
+                                        style="background:#e0f2fe;color:#0369a1;border:none;border-radius:10px;
+                                               padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer;">
+                                    ← Anterior
+                                </button>
+                                <button onclick="cambiarPagina(1)" id="btn-siguiente"
+                                        style="background:#e0f2fe;color:#0369a1;border:none;border-radius:10px;
+                                               padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer;">
+                                    Siguiente →
+                                </button>
+                            </div>
+                        </div>
 
-        <div class="movimientos-scroll">
-            <table class="movimientos-table">
-                <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Tipo</th>
-                    <th>Monto</th>
-                    <th>Estado</th>
-                    <th>Riesgo</th>
-                </tr>
-                </thead>
-                <tbody id="tabla-movimientos">
-                </tbody>
-            </table>
-        </div>
-    </div>
+                        <div class="movimientos-scroll">
+                            <table class="movimientos-table">
+                                <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Monto</th>
+                                    <th>Estado</th>
+                                    <th>Riesgo</th>
+                                </tr>
+                                </thead>
+                                <tbody id="tabla-movimientos">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
 
-    <p th:if="${#lists.isEmpty(historial)}" class="empty">
-        Este usuario todavía no tiene movimientos registrados.
-    </p>
-</div>
-
+                    <p th:if="${#lists.isEmpty(historial)}" class="empty">
+                        Este usuario todavía no tiene movimientos registrados.
+                    </p>
+                </div>
             </div>
         </div>
     </div>
@@ -567,7 +571,10 @@
 
         if (selectedForm) {
             selectedForm.classList.add('active');
-            button.classList.add('active');
+
+            if (button) {
+                button.classList.add('active');
+            }
 
             setTimeout(function () {
                 selectedForm.scrollIntoView({
@@ -578,182 +585,79 @@
         }
     }
 
+    document.addEventListener("DOMContentLoaded", function () {
+        const inputUsuarioDestino = document.getElementById("destinoUsuarioId");
+        const selectBilleteraDestino = document.getElementById("destinoBilleteraId");
 
-    let temporizadorBusquedaBilleteras = null;
-
-    function limpiarBilleterasDestino(mensaje) {
-        const select = document.getElementById('destinoBilleteraSelect');
-        const estado = document.getElementById('estadoCargaBilleteras');
-
-        if (!select) {
+        if (!inputUsuarioDestino || !selectBilleteraDestino) {
             return;
         }
 
-        select.innerHTML = '';
-        const option = document.createElement('option');
-        option.value = '';
-        option.textContent = mensaje;
-        select.appendChild(option);
-        select.disabled = true;
+        let timeoutBusqueda;
 
-        if (estado) {
-            estado.textContent = mensaje;
-            estado.style.color = '#64748b';
-        }
-    }
-
-    function cargarBilleterasDestino(usuarioId) {
-        const select = document.getElementById('destinoBilleteraSelect');
-        const estado = document.getElementById('estadoCargaBilleteras');
-
-        if (!select || !estado) {
-            return;
+        function limpiarSelect(mensaje) {
+            selectBilleteraDestino.innerHTML = "";
+            const option = document.createElement("option");
+            option.value = "";
+            option.textContent = mensaje;
+            selectBilleteraDestino.appendChild(option);
         }
 
-        if (!usuarioId || usuarioId.trim().length === 0) {
-            limpiarBilleterasDestino('Escribe el ID para buscar sus billeteras.');
-            return;
-        }
+        inputUsuarioDestino.addEventListener("input", function () {
+            const usuarioId = inputUsuarioDestino.value.trim();
 
-        estado.textContent = 'Buscando billeteras...';
-        estado.style.color = '#64748b';
-        select.disabled = true;
+            clearTimeout(timeoutBusqueda);
 
-        fetch('/api/usuarios/' + encodeURIComponent(usuarioId.trim()) + '/billeteras')
-            .then(function(response) {
-                if (!response.ok) {
-                    throw new Error('No se pudo consultar el usuario');
-                }
-                return response.json();
-            })
-            .then(function(billeteras) {
-                select.innerHTML = '';
+            if (!usuarioId) {
+                limpiarSelect("Primero escribe el ID del usuario destino");
+                return;
+            }
 
-                if (!billeteras || billeteras.length === 0) {
-                    const option = document.createElement('option');
-                    option.value = '';
-                    option.textContent = 'Este usuario no tiene billeteras';
-                    select.appendChild(option);
-                    select.disabled = true;
+            limpiarSelect("Buscando billeteras...");
 
-                    estado.textContent = 'Este usuario no tiene billeteras disponibles.';
-                    estado.style.color = '#dc2626';
-                    return;
-                }
+            timeoutBusqueda = setTimeout(function () {
+                fetch("/api/usuarios/" + encodeURIComponent(usuarioId) + "/billeteras")
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error("No se pudo consultar el usuario");
+                        }
+                        return response.json();
+                    })
+                    .then(function (billeteras) {
+                        selectBilleteraDestino.innerHTML = "";
 
-                const primeraOpcion = document.createElement('option');
-                primeraOpcion.value = '';
-                primeraOpcion.textContent = 'Selecciona billetera destino';
-                select.appendChild(primeraOpcion);
+                        if (!billeteras || billeteras.length === 0) {
+                            limpiarSelect("Este usuario no tiene billeteras");
+                            return;
+                        }
 
-                billeteras.forEach(function(b) {
-                    const option = document.createElement('option');
-                    option.value = b.id;
+                        const placeholder = document.createElement("option");
+                        placeholder.value = "";
+                        placeholder.textContent = "Selecciona billetera destino";
+                        selectBilleteraDestino.appendChild(placeholder);
 
-                    const saldo = new Intl.NumberFormat('es-CO').format(b.saldo);
-                    option.textContent = b.nombre + ' - ' + b.tipo + ' - $' + saldo;
+                        billeteras.forEach(function (billetera) {
+                            const option = document.createElement("option");
+                            option.value = billetera.id;
 
-                    select.appendChild(option);
-                });
+                            const saldo = new Intl.NumberFormat("es-CO").format(billetera.saldo);
 
-                select.disabled = false;
-                estado.textContent = billeteras.length + ' billetera(s) encontrada(s).';
-                estado.style.color = '#16a34a';
-            })
-            .catch(function() {
-                limpiarBilleterasDestino('No se encontraron billeteras para ese usuario.');
-                if (estado) {
-                    estado.style.color = '#dc2626';
-                }
-            });
-    }
+                            option.textContent =
+                                billetera.nombre +
+                                " - " +
+                                billetera.tipo +
+                                " - $" +
+                                saldo;
 
-    function prepararCargaBilleterasDestino() {
-        const input = document.getElementById('destinoUsuarioIdInput');
-
-        if (!input) {
-            return;
-        }
-
-        input.addEventListener('input', function() {
-            clearTimeout(temporizadorBusquedaBilleteras);
-
-            temporizadorBusquedaBilleteras = setTimeout(function() {
-                cargarBilleterasDestino(input.value);
+                            selectBilleteraDestino.appendChild(option);
+                        });
+                    })
+                    .catch(function () {
+                        limpiarSelect("No se encontraron billeteras");
+                    });
             }, 400);
         });
-    }
-</script>
-    <script>
-document.addEventListener("DOMContentLoaded", function () {
-  const inputUsuarioDestino = document.getElementById("destinoUsuarioId");
-  const selectBilleteraDestino = document.getElementById("destinoBilleteraId");
-
-  if (!inputUsuarioDestino || !selectBilleteraDestino) {
-    return;
-  }
-
-  let timeoutBusqueda;
-
-  function limpiarSelect(mensaje) {
-    selectBilleteraDestino.innerHTML = "";
-    const option = document.createElement("option");
-    option.value = "";
-    option.textContent = mensaje;
-    selectBilleteraDestino.appendChild(option);
-  }
-
-  inputUsuarioDestino.addEventListener("input", function () {
-    const usuarioId = inputUsuarioDestino.value.trim();
-
-    clearTimeout(timeoutBusqueda);
-
-    if (!usuarioId) {
-      limpiarSelect("Primero escribe el ID del usuario destino");
-      return;
-    }
-
-    limpiarSelect("Buscando billeteras...");
-
-    timeoutBusqueda = setTimeout(function () {
-      fetch("/api/usuarios/" + encodeURIComponent(usuarioId) + "/billeteras")
-        .then(function (response) {
-          if (!response.ok) {
-            throw new Error("No se pudo consultar el usuario");
-          }
-          return response.json();
-        })
-        .then(function (billeteras) {
-          selectBilleteraDestino.innerHTML = "";
-
-          if (!billeteras || billeteras.length === 0) {
-            limpiarSelect("Este usuario no tiene billeteras");
-            return;
-          }
-
-          const placeholder = document.createElement("option");
-          placeholder.value = "";
-          placeholder.textContent = "Selecciona billetera destino";
-          selectBilleteraDestino.appendChild(placeholder);
-
-          billeteras.forEach(function (billetera) {
-            const option = document.createElement("option");
-            option.value = billetera.id;
-            option.textContent =
-              billetera.nombre +
-              " - " +
-              billetera.tipo +
-              " - $" +
-              billetera.saldo;
-            selectBilleteraDestino.appendChild(option);
-          });
-        })
-        .catch(function () {
-          limpiarSelect("No se encontraron billeteras");
-        });
-    }, 400);
-  });
-});
+    });
 </script>
 
 <!-- Chatbot flotante -->
@@ -769,7 +673,7 @@ document.addEventListener("DOMContentLoaded", function () {
      style="display:none;position:fixed;bottom:96px;right:28px;width:360px;height:480px;
             background:#ffffff;border-radius:20px;box-shadow:0 20px 50px rgba(15,23,42,0.2);
             z-index:9999;border:1px solid #e5e7eb;flex-direction:column;overflow:hidden;">
-    
+
     <div style="background:linear-gradient(135deg,#2563eb,#06b6d4);padding:16px 20px;
                 display:flex;justify-content:space-between;align-items:center;">
         <div>
@@ -806,59 +710,70 @@ document.addEventListener("DOMContentLoaded", function () {
 </div>
 
 <script>
-function toggleChat() {
-    const box = document.getElementById('chat-box');
-    box.style.display = box.style.display === 'none' ? 'flex' : 'none';
-}
-
-async function enviarMensaje() {
-    const input = document.getElementById('chat-input');
-    const messages = document.getElementById('chat-messages');
-    const texto = input.value.trim();
-    if (!texto) return;
-
-    messages.innerHTML += `
-        <div style="background:#2563eb;color:white;border-radius:14px 14px 4px 14px;
-                    padding:12px 14px;font-size:13px;max-width:85%;align-self:flex-end;
-                    line-height:1.5;margin-left:auto;">
-            ${texto}
-        </div>`;
-    input.value = '';
-    messages.scrollTop = messages.scrollHeight;
-
-    const loadingId = 'loading-' + Date.now();
-    messages.innerHTML += `
-        <div id="${loadingId}" style="background:#f1f5f9;border-radius:14px 14px 14px 4px;
-                    padding:12px 14px;font-size:13px;color:#64748b;max-width:85%;">
-            Escribiendo...
-        </div>`;
-    messages.scrollTop = messages.scrollHeight;
-
-    try {
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mensaje: texto })
-        });
-        const data = await response.json();
-
-        document.getElementById(loadingId).remove();
-        messages.innerHTML += `
-            <div style="background:#eff6ff;border-radius:14px 14px 14px 4px;padding:12px 14px;
-                        font-size:13px;color:#1e40af;max-width:85%;line-height:1.5;">
-                ${data.respuesta}
-            </div>`;
-        messages.scrollTop = messages.scrollHeight;
-    } catch (error) {
-        document.getElementById(loadingId).remove();
-        messages.innerHTML += `
-            <div style="background:#fee2e2;border-radius:14px;padding:12px 14px;
-                        font-size:13px;color:#dc2626;max-width:85%;">
-                Error al conectar. Intenta de nuevo.
-            </div>`;
+    function toggleChat() {
+        const box = document.getElementById('chat-box');
+        box.style.display = box.style.display === 'none' ? 'flex' : 'none';
     }
-}
+
+    async function enviarMensaje() {
+        const input = document.getElementById('chat-input');
+        const messages = document.getElementById('chat-messages');
+        const texto = input.value.trim();
+
+        if (!texto) {
+            return;
+        }
+
+        messages.innerHTML += `
+            <div style="background:#2563eb;color:white;border-radius:14px 14px 4px 14px;
+                        padding:12px 14px;font-size:13px;max-width:85%;align-self:flex-end;
+                        line-height:1.5;margin-left:auto;">
+                ${texto}
+            </div>`;
+
+        input.value = '';
+        messages.scrollTop = messages.scrollHeight;
+
+        const loadingId = 'loading-' + Date.now();
+
+        messages.innerHTML += `
+            <div id="${loadingId}" style="background:#f1f5f9;border-radius:14px 14px 14px 4px;
+                        padding:12px 14px;font-size:13px;color:#64748b;max-width:85%;">
+                Escribiendo...
+            </div>`;
+
+        messages.scrollTop = messages.scrollHeight;
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mensaje: texto })
+            });
+
+            const data = await response.json();
+
+            document.getElementById(loadingId).remove();
+
+            messages.innerHTML += `
+                <div style="background:#eff6ff;border-radius:14px 14px 14px 4px;padding:12px 14px;
+                            font-size:13px;color:#1e40af;max-width:85%;line-height:1.5;">
+                    ${data.respuesta}
+                </div>`;
+
+            messages.scrollTop = messages.scrollHeight;
+        } catch (error) {
+            document.getElementById(loadingId).remove();
+
+            messages.innerHTML += `
+                <div style="background:#fee2e2;border-radius:14px;padding:12px 14px;
+                            font-size:13px;color:#dc2626;max-width:85%;">
+                    Error al conectar. Intenta de nuevo.
+                </div>`;
+        }
+    }
 </script>
+
 <script th:src="@{/js/toast.js}"></script>
 <script th:src="@{/js/validaciones.js}"></script>
 
@@ -873,7 +788,9 @@ async function enviarMensaje() {
         const btnAnterior = document.getElementById('btn-anterior');
         const btnSiguiente = document.getElementById('btn-siguiente');
 
-        if (!tbody || movimientos.length === 0) return;
+        if (!tbody || movimientos.length === 0) {
+            return;
+        }
 
         const inicio = paginaActual * porPagina;
         const fin = Math.min(inicio + porPagina, movimientos.length);
@@ -907,8 +824,10 @@ async function enviarMensaje() {
         });
 
         info.textContent = `Página ${paginaActual + 1} de ${totalPaginas} — ${movimientos.length} movimientos`;
+
         btnAnterior.disabled = paginaActual === 0;
         btnSiguiente.disabled = paginaActual >= totalPaginas - 1;
+
         btnAnterior.style.opacity = paginaActual === 0 ? '0.4' : '1';
         btnSiguiente.style.opacity = paginaActual >= totalPaginas - 1 ? '0.4' : '1';
     }
@@ -921,21 +840,21 @@ async function enviarMensaje() {
 
     document.addEventListener('DOMContentLoaded', function () {
         renderizarTabla();
-    });
-    document.addEventListener("DOMContentLoaded", function () {
-    const toasts = document.querySelectorAll(".toast-center");
 
-    toasts.forEach(function (toast) {
-        setTimeout(function () {
-            toast.classList.add("hide");
+        const toasts = document.querySelectorAll(".toast-center");
 
+        toasts.forEach(function (toast) {
             setTimeout(function () {
-                toast.remove();
-            }, 300);
-        }, 3000);
+                toast.classList.add("hide");
+
+                setTimeout(function () {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        });
     });
-});
 </script>
+
 <script th:inline="javascript">
     const todosMovimientos = /*[[${historial}]]*/ [];
 
@@ -975,10 +894,13 @@ async function enviarMensaje() {
             filtrados.forEach(function(txn) {
                 const fecha = new Date(txn.fecha).toLocaleString('es-CO');
                 const monto = new Intl.NumberFormat('es-CO').format(txn.valor);
+
                 const colorTipo = txn.tipo === 'RECARGA' ? '#16a34a' :
                                   txn.tipo === 'RETIRO' ? '#dc2626' : '#2563eb';
+
                 const colorEstado = txn.estado === 'RECHAZADA' ? '#fee2e2' :
                                     txn.estado === 'REVERTIDA' ? '#fef3c7' : '#dcfce7';
+
                 const colorEstadoTexto = txn.estado === 'RECHAZADA' ? '#991b1b' :
                                          txn.estado === 'REVERTIDA' ? '#92400e' : '#166534';
 
@@ -997,13 +919,14 @@ async function enviarMensaje() {
             html += `</tbody></table></div>`;
         }
 
-        // Mostrar en modal
         const modal = document.getElementById('modal-billetera');
         const modalContenido = document.getElementById('modal-contenido');
-        modalContenido.innerHTML = html;
-        modal.style.display = 'flex';
+
+        if (modal && modalContenido) {
+            modalContenido.innerHTML = html;
+            modal.style.display = 'flex';
+        }
     }
-     
 </script>
 
 <!-- Modal historial por billetera -->
@@ -1023,5 +946,6 @@ async function enviarMensaje() {
         <div id="modal-contenido"></div>
     </div>
 </div>
+
 </body>
 </html>
