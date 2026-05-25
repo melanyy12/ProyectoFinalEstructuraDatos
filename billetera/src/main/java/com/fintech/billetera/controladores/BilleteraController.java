@@ -139,37 +139,60 @@ public String registrarUsuario(@RequestParam String id,
         return "usuario";
     }
 
-    @PostMapping("/transaccion/recarga")
-    public String recargar(@RequestParam String billeteraId,
-            @RequestParam double monto,
-            @RequestParam String usuarioId,
-            org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
+   @PostMapping("/transaccion/recarga")
+public String recargar(@RequestParam String billeteraId,
+        @RequestParam double monto,
+        @RequestParam String usuarioId,
+        org.springframework.web.servlet.mvc.support.RedirectAttributes attrs) {
 
-        Billetera billetera = gestor.getBilletera(billeteraId);
+    Billetera billetera = gestor.getBilletera(billeteraId);
 
-        if (billetera == null) {
-            attrs.addFlashAttribute("toastError", "No existe la billetera con ID: " + billeteraId);
-            return "redirect:/usuarios/" + usuarioId;
-        }
-
-        if (!billeteraPerteneceAUsuario(billetera, usuarioId)) {
-            attrs.addFlashAttribute("toastError", "Esa billetera no pertenece a este usuario");
-            return "redirect:/usuarios/" + usuarioId;
-        }
-
-        Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
-                TipoTransaccion.RECARGA, monto, null, billeteraId);
-
-        boolean exito = gestor.procesarTransaccion(t);
-
-        if (exito && t.getEstado() != EstadoTransaccion.RECHAZADA) {
-            attrs.addFlashAttribute("toast", "Recarga realizada correctamente");
-        } else {
-            attrs.addFlashAttribute("toastError", "La recarga fue rechazada");
-        }
-
+    if (billetera == null) {
+        attrs.addFlashAttribute("toastError", "No existe la billetera con ID: " + billeteraId);
         return "redirect:/usuarios/" + usuarioId;
     }
+
+    if (!billeteraPerteneceAUsuario(billetera, usuarioId)) {
+        attrs.addFlashAttribute("toastError", "Esa billetera no pertenece a este usuario");
+        return "redirect:/usuarios/" + usuarioId;
+    }
+
+    if (monto <= 0) {
+        attrs.addFlashAttribute("toastError", "El monto de recarga debe ser mayor a cero");
+        return "redirect:/usuarios/" + usuarioId;
+    }
+
+    EstadoBilletera estadoAnterior = billetera.getEstado();
+    boolean estabaInactiva = estadoAnterior != EstadoBilletera.ACTIVA;
+
+    if (estabaInactiva) {
+        billetera.setEstado(EstadoBilletera.ACTIVA);
+        gestor.registrarBilletera(billetera);
+    }
+
+    Transaccion t = new Transaccion("T" + System.currentTimeMillis(),
+            TipoTransaccion.RECARGA, monto, null, billeteraId);
+
+    boolean exito = gestor.procesarTransaccion(t);
+
+    if (exito && t.getEstado() != EstadoTransaccion.RECHAZADA) {
+        if (estabaInactiva) {
+            attrs.addFlashAttribute("toast",
+                    "Recarga realizada correctamente. La billetera fue activada nuevamente");
+        } else {
+            attrs.addFlashAttribute("toast", "Recarga realizada correctamente");
+        }
+    } else {
+        if (estabaInactiva) {
+            billetera.setEstado(estadoAnterior);
+            gestor.registrarBilletera(billetera);
+        }
+
+        attrs.addFlashAttribute("toastError", "La recarga fue rechazada");
+    }
+
+    return "redirect:/usuarios/" + usuarioId;
+}
 
   @PostMapping("/transaccion/retiro")
 public String retirar(@RequestParam String billeteraId,

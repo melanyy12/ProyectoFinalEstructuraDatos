@@ -164,7 +164,7 @@
 
     </div>
 </div>
-
+<script th:src="@{/js/toast.js}"></script>
 <script>
     function toggleMenu(event) {
         event.stopPropagation();
@@ -190,7 +190,7 @@
                 setTimeout(function () {
                     toast.remove();
                 }, 300);
-            }, 1000);
+            }, 4000);
         });
     });
 </script>
