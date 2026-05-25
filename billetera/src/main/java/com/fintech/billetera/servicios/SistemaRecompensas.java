@@ -1,31 +1,29 @@
 package com.fintech.billetera.servicios;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.fintech.billetera.estructuras.ListaSimple;
 import com.fintech.billetera.modelos.Beneficio;
 import com.fintech.billetera.modelos.NivelUsuario;
 import com.fintech.billetera.modelos.Transaccion;
 import com.fintech.billetera.modelos.Usuario;
 
 public class SistemaRecompensas {
-    private List<Beneficio> beneficiosDisponibles;
+    private ListaSimple<Beneficio> beneficiosDisponibles;
 
     public SistemaRecompensas() {
-        this.beneficiosDisponibles = new ArrayList<>();
+        this.beneficiosDisponibles = new ListaSimple<>();
         inicializarBeneficios();
     }
 
     private void inicializarBeneficios() {
-        beneficiosDisponibles.add(new Beneficio("BEN001", "Descuento 5% comisiones",
+        beneficiosDisponibles.agregar(new Beneficio("BEN001", "Descuento 5% comisiones",
                 200, NivelUsuario.PLATA, "DESCUENTO"));
-        beneficiosDisponibles.add(new Beneficio("BEN002", "Descuento 10% comisiones",
+        beneficiosDisponibles.agregar(new Beneficio("BEN002", "Descuento 10% comisiones",
                 500, NivelUsuario.ORO, "DESCUENTO"));
-        beneficiosDisponibles.add(new Beneficio("BEN003", "Transferencia gratis",
+        beneficiosDisponibles.agregar(new Beneficio("BEN003", "Transferencia gratis",
                 300, NivelUsuario.PLATA, "GRATIS"));
-        beneficiosDisponibles.add(new Beneficio("BEN004", "Límite transacción doble",
+        beneficiosDisponibles.agregar(new Beneficio("BEN004", "Límite transacción doble",
                 1000, NivelUsuario.ORO, "LIMITE"));
-        beneficiosDisponibles.add(new Beneficio("BEN005", "Cashback 2%",
+        beneficiosDisponibles.agregar(new Beneficio("BEN005", "Cashback 2%",
                 2000, NivelUsuario.PLATINO, "CASHBACK"));
     }
 
@@ -41,12 +39,15 @@ public class SistemaRecompensas {
     }
 
     public boolean canjearBeneficio(Usuario usuario, String beneficioId) {
-        for (Beneficio b : beneficiosDisponibles) {
+        java.util.Iterator<Beneficio> it = beneficiosDisponibles.iterator();
+        while (it.hasNext()) {
+            Beneficio b = it.next();
             if (b.getId().equals(beneficioId) && b.estaDisponible(usuario)) {
-                usuario.descontarPuntos(b.getPuntosRequeridos());
-                System.out.println("Beneficio canjeado: " + b.getNombre());
-                return true;
-            }
+              usuario.descontarPuntos(b.getPuntosRequeridos());
+              usuario.agregarBeneficioCanjeado(b);
+              System.out.println("Beneficio canjeado: " + b.getNombre());
+              return true;
+           }
         }
         return false;
     }
@@ -55,18 +56,22 @@ public class SistemaRecompensas {
         usuario.descontarPuntos(txn.getPuntosGenerados());
     }
 
-    public List<Beneficio> getBeneficiosPorNivel(NivelUsuario nivel) {
-        List<Beneficio> resultado = new ArrayList<>();
-        for (Beneficio b : beneficiosDisponibles) {
-            if (b.getNivelRequerido() == nivel) resultado.add(b);
+    public ListaSimple<Beneficio> getBeneficiosPorNivel(NivelUsuario nivel) {
+        ListaSimple<Beneficio> resultado = new ListaSimple<>();
+        java.util.Iterator<Beneficio> it = beneficiosDisponibles.iterator();
+        while (it.hasNext()) {
+            Beneficio b = it.next();
+            if (b.getNivelRequerido() == nivel) resultado.agregar(b);
         }
         return resultado;
     }
 
-    public List<Beneficio> getBeneficiosDisponibles(Usuario usuario) {
-        List<Beneficio> resultado = new ArrayList<>();
-        for (Beneficio b : beneficiosDisponibles) {
-            if (b.estaDisponible(usuario)) resultado.add(b);
+    public ListaSimple<Beneficio> getBeneficiosDisponibles(Usuario usuario) {
+        ListaSimple<Beneficio> resultado = new ListaSimple<>();
+        java.util.Iterator<Beneficio> it = beneficiosDisponibles.iterator();
+        while (it.hasNext()) {
+            Beneficio b = it.next();
+            if (b.estaDisponible(usuario)) resultado.agregar(b);
         }
         return resultado;
     }

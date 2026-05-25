@@ -3,198 +3,956 @@
 <head>
     <meta charset="UTF-8">
     <title>Usuario - FintechWallet</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; }
-        .navbar { background: #1e293b; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #334155; }
-        .navbar h1 { color: #38bdf8; font-size: 22px; }
-        .navbar a { color: #94a3b8; text-decoration: none; margin-left: 24px; font-size: 14px; }
-        .navbar a:hover { color: #38bdf8; }
-        .container { max-width: 1100px; margin: 40px auto; padding: 0 24px; }
-        .header-card { background: #1e293b; border-radius: 12px; padding: 28px; margin-bottom: 28px; border: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
-        .header-card h2 { font-size: 24px; margin-bottom: 6px; }
-        .header-card p { color: #94a3b8; font-size: 14px; }
-        .badge { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
-        .badge-bronce { background: #78350f; color: #fcd34d; }
-        .badge-plata { background: #1e3a5f; color: #93c5fd; }
-        .badge-oro { background: #3b2100; color: #fbbf24; }
-        .badge-platino { background: #1e1b4b; color: #a78bfa; }
-        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
-        .section { background: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155; margin-bottom: 24px; }
-        .section h3 { font-size: 16px; margin-bottom: 18px; color: #f1f5f9; }
-        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-        .form-group label { font-size: 12px; color: #94a3b8; text-transform: uppercase; }
-        .form-group input, .form-group select { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 9px 12px; color: #e2e8f0; font-size: 14px; width: 100%; }
-        .form-group input:focus, .form-group select:focus { outline: none; border-color: #38bdf8; }
-        .btn { background: #38bdf8; color: #0f172a; border: none; border-radius: 8px; padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 4px; }
-        .btn:hover { background: #0ea5e9; }
-        .btn-danger { background: #ef4444; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 4px; }
-        .btn-danger:hover { background: #dc2626; }
-        .billetera-card { background: #0f172a; border-radius: 10px; padding: 16px; margin-bottom: 12px; border: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
-        .billetera-card h4 { font-size: 15px; margin-bottom: 3px; }
-        .billetera-card p { font-size: 13px; color: #94a3b8; }
-        .saldo { font-size: 20px; font-weight: 700; color: #4ade80; }
-        .txn-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #1e293b; font-size: 13px; }
-        .txn-row:last-child { border-bottom: none; }
-        .tipo-recarga { color: #4ade80; }
-        .tipo-retiro { color: #f87171; }
-        .tipo-transferencia { color: #38bdf8; }
-        .alerta { background: #1e1b4b; border-left: 3px solid #818cf8; padding: 10px 14px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; }
-        .back-link { color: #94a3b8; text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 20px; }
-        .back-link:hover { color: #38bdf8; }
-        .puntos-big { font-size: 36px; font-weight: 700; color: #38bdf8; }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/usuario.css}"/>
 </head>
+
 <body>
+<div th:if="${toast}" class="toast-center toast-success">
+    <div class="toast-icon">✓</div>
+    <div class="toast-title">Operación exitosa</div>
+    <div class="toast-message" th:text="${toast}">
+        Operación realizada correctamente
+    </div>
+</div>
+
+<div th:if="${toastError}" class="toast-center toast-error">
+    <div class="toast-icon">!</div>
+    <div class="toast-title">Error</div>
+    <div class="toast-message" th:text="${toastError}">
+        Ocurrió un error
+    </div>
+</div>
+
 <nav class="navbar">
-    <h1>💳 FintechWallet</h1>
-    <div>
-        <a href="/">Inicio</a>
-        <a href="/analitica">Analítica</a>
+    <a href="/" class="brand">
+        <span class="brand-icon"></span>
+        <span>FintechWallet</span>
+    </a>
+
+    <div class="menu-wrapper">
+        <button type="button" class="menu-btn" onclick="toggleMenu(event)">
+            ☰ Menú
+        </button>
+
+        <div id="dropdownMenu" class="dropdown-menu">
+            <a href="/"> Inicio</a>
+            <a href="/analitica"> Analítica</a>
+            <a href="/rendimiento"> Rendimiento</a>
+        </div>
     </div>
 </nav>
 
 <div class="container">
     <a href="/" class="back-link">← Volver al inicio</a>
 
-    <div class="header-card">
+    <div th:if="${error}" class="error-box">
+        ⚠ <span th:text="${error}">Error</span>
+    </div>
+
+    <div class="wallet-hero">
         <div>
             <h2 th:text="${usuario.nombre}">Nombre</h2>
             <p th:text="${usuario.email}">email</p>
-            <p style="margin-top:6px;" th:text="'ID: ' + ${usuario.id}">ID</p>
+            <p th:text="'ID: ' + ${usuario.id}">ID</p>
         </div>
-        <div style="text-align:right;">
+
+        <div class="hero-side">
             <span class="badge"
                   th:classappend="${usuario.nivel.name() == 'BRONCE' ? 'badge-bronce' : (usuario.nivel.name() == 'PLATA' ? 'badge-plata' : (usuario.nivel.name() == 'ORO' ? 'badge-oro' : 'badge-platino'))}"
-                  th:text="${usuario.nivel}">NIVEL</span>
-            <div style="margin-top:12px;">
-                <p style="font-size:12px;color:#94a3b8;">PUNTOS ACUMULADOS</p>
-                <p class="puntos-big" th:text="${usuario.puntosTotales}">0</p>
-            </div>
+                  th:text="${usuario.nivel}">
+                NIVEL
+            </span>
+
+            <div class="puntos-label">Puntos acumulados</div>
+            <div class="puntos-big" th:text="${usuario.puntosTotales}">0</div>
+
+            <a th:href="@{/beneficios/{id}(id=${usuario.id})}" class="btn-beneficios">
+                Ver beneficios →
+            </a>
         </div>
     </div>
 
-    <div class="grid2">
-        <div class="section">
-            <h3>Mis Billeteras</h3>
-            <div th:each="billetera : ${usuario.billeteras}">
-                <div class="billetera-card">
-                    <div>
-                        <h4 th:text="${billetera.nombre}">Nombre</h4>
-                        <p th:text="${billetera.tipo}">Tipo</p>
-                    </div>
-                    <div class="saldo" th:text="'$' + ${#numbers.formatDecimal(billetera.saldo,0,'COMMA',0,'POINT')}">$0</div>
-                </div>
-            </div>
-            <p th:if="${#lists.isEmpty(usuario.billeteras)}" style="color:#64748b;font-size:13px;">Sin billeteras aún.</p>
-
-            <h3 style="margin-top:20px;">Crear Billetera</h3>
-            <form th:action="@{/billetera/crear}" method="post">
-                <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
-                <div class="form-group">
-                    <label>ID Billetera</label>
-                    <input type="text" name="id" placeholder="B001" required/>
-                </div>
-                <div class="form-group">
-                    <label>Nombre</label>
-                    <input type="text" name="nombre" placeholder="Gastos diarios" required/>
-                </div>
-                <div class="form-group">
-                    <label>Tipo</label>
-                    <select name="tipo">
-                        <option value="GASTOS_DIARIOS">Gastos Diarios</option>
-                        <option value="AHORRO">Ahorro</option>
-                        <option value="COMPRAS">Compras</option>
-                        <option value="TRANSPORTE">Transporte</option>
-                        <option value="INVERSION">Inversión</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn">Crear Billetera</button>
-            </form>
-        </div>
-
+    <div class="layout">
         <div>
             <div class="section">
-                <h3>Recargar Billetera</h3>
-                <form th:action="@{/transaccion/recarga}" method="post">
-                    <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
-                    <div class="form-group">
-                        <label>ID Billetera</label>
-                        <input type="text" name="billeteraId" placeholder="B001" required/>
+                <h3>Mis billeteras</h3>
+                <p class="section-subtitle">Tus billeteras disponibles para operar.</p>
+
+                <div th:if="${not #lists.isEmpty(usuario.billeteras)}" class="wallet-list">
+                    <div th:each="billetera : ${usuario.billeteras}" class="billetera-card"
+                     th:style="${billetera.estado.name() == 'BLOQUEADA' ? 'opacity:0.6;border-color:#fecaca;' : (billetera.estado.name() == 'INACTIVA' ? 'opacity:0.75;border-color:#e2e8f0;' : '')}">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                        <h4 th:text="${billetera.nombre}">Nombre</h4>
+                        <span th:text="${billetera.estado}"
+                              th:style="${billetera.estado.name() == 'ACTIVA' ? 'background:#dcfce7;color:#166534;' : (billetera.estado.name() == 'BLOQUEADA' ? 'background:#fee2e2;color:#991b1b;' : 'background:#f1f5f9;color:#475569;')}"
+                              style="font-size:10px;font-weight:900;padding:3px 8px;border-radius:999px;">
+                            ESTADO
+                        </span>
                     </div>
-                    <div class="form-group">
-                        <label>Monto</label>
-                        <input type="number" name="monto" placeholder="100000" required/>
-                    </div>
-                    <button type="submit" class="btn">Recargar</button>
-                </form>
+                    <p th:text="${billetera.tipo}">Tipo</p>
+                    <p th:text="'ID: ' + ${billetera.id}">ID</p>
+                    <span class="saldo"
+                          th:text="'$' + ${#numbers.formatDecimal(billetera.saldo,0,'COMMA',0,'POINT')}">
+                        $0
+                    </span>
+
+                    <button type="button"
+                        th:data-id="${billetera.id}"
+                        th:data-nombre="${billetera.nombre}"
+                        onclick="verMovimientosBilletera(this.dataset.id, this.dataset.nombre)"
+                        style="width:100%;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;
+                        border-radius:10px;padding:8px;font-size:13px;
+                        font-weight:800;cursor:pointer;margin-bottom:6px;">
+                         Ver movimientos
+                    </button>
+
+                    <form th:action="@{/billetera/estado}" method="post" style="margin-top:10px;">
+                        <input type="hidden" name="billeteraId" th:value="${billetera.id}"/>
+                        <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
+                        <select name="estado"
+                                style="width:100%;background:#f8fafc;border:1px solid #cbd5e1;
+                                       border-radius:10px;padding:8px 10px;font-size:13px;
+                                       color:#0f172a;margin-bottom:6px;">
+                            <option value="ACTIVA"
+                                    th:selected="${billetera.estado.name() == 'ACTIVA'}">
+                                 Activa
+                            </option>
+                            <option value="INACTIVA"
+                                    th:selected="${billetera.estado.name() == 'INACTIVA'}">
+                                 Inactiva
+                            </option>
+                            <option value="BLOQUEADA"
+                                    th:selected="${billetera.estado.name() == 'BLOQUEADA'}">
+                                 Bloqueada
+                            </option>
+                        </select>
+                        <button type="submit"
+                                style="width:100%;background:#e0f2fe;color:#0369a1;border:none;
+                                       border-radius:10px;padding:8px;font-size:13px;
+                                       font-weight:800;cursor:pointer;">
+                            Cambiar estado
+                        </button>
+                    </form>
+                </div>
+                </div>
+
+                <p th:if="${#lists.isEmpty(usuario.billeteras)}" class="empty">
+                    Sin billeteras aún.
+                </p>
             </div>
 
             <div class="section">
-                <h3>Retirar</h3>
-                <form th:action="@{/transaccion/retiro}" method="post">
+                <h3>Crear billetera</h3>
+                <p class="section-subtitle">El sistema genera el ID automáticamente.</p>
+
+                <form th:action="@{/billetera/crear}" method="post">
                     <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
+
                     <div class="form-group">
-                        <label>ID Billetera</label>
-                        <input type="text" name="billeteraId" placeholder="B001" required/>
+                        <label>Nombre</label>
+                        <input type="text" name="nombre" placeholder="Gastos diarios" required/>
                     </div>
+
                     <div class="form-group">
-                        <label>Monto</label>
-                        <input type="number" name="monto" placeholder="50000" required/>
+                        <label>Tipo</label>
+                        <select name="tipo">
+                            <option value="GASTOS_DIARIOS">Gastos Diarios</option>
+                            <option value="AHORRO">Ahorro</option>
+                            <option value="COMPRAS">Compras</option>
+                            <option value="TRANSPORTE">Transporte</option>
+                            <option value="INVERSION">Inversión</option>
+                        </select>
                     </div>
-                    <button type="submit" class="btn">Retirar</button>
+
+                    <button type="submit" class="btn">Crear billetera</button>
                 </form>
             </div>
 
-            <div class="section">
-                <h3>Transferir</h3>
-                <form th:action="@{/transaccion/transferencia}" method="post">
-                    <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
-                    <div class="form-group">
-                        <label>Billetera Origen</label>
-                        <input type="text" name="origenId" placeholder="B001" required/>
-                    </div>
-                    <div class="form-group">
-                        <label>Billetera Destino</label>
-                        <input type="text" name="destinoId" placeholder="B002" required/>
-                    </div>
-                    <div class="form-group">
-                        <label>Monto</label>
-                        <input type="number" name="monto" placeholder="50000" required/>
-                    </div>
-                    <button type="submit" class="btn">Transferir</button>
-                </form>
-            </div>
+            <div class="mini-revert-card">
+                <div>
+                    <h3>Revertir transacción</h3>
+                    <p>Deshace la última operación válida.</p>
+                </div>
 
-            <div class="section">
-                <h3>Revertir última transacción</h3>
                 <form th:action="@{/transaccion/revertir}" method="post">
                     <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
-                    <button type="submit" class="btn-danger">↩ Revertir</button>
+                    <button type="submit" class="btn-mini-danger"
+                            onclick="return confirm('¿Seguro que deseas revertir la última transacción?')">
+                        ↩ Revertir
+                    </button>
                 </form>
             </div>
         </div>
-    </div>
 
-    <div class="section">
-        <h3>Historial de Transacciones</h3>
-        <div th:each="txn : ${historial}">
-            <div class="txn-row">
-                <span th:class="${txn.tipo.name() == 'RECARGA' ? 'tipo-recarga' : (txn.tipo.name() == 'RETIRO' ? 'tipo-retiro' : 'tipo-transferencia')}"
-                      th:text="${txn.tipo}">TIPO</span>
-                <span th:text="'$' + ${txn.valor}">$0</span>
-                <span th:text="${txn.estado}">ESTADO</span>
-                <span th:text="${txn.puntosGenerados} + ' pts'">0 pts</span>
+        <div class="actions-panel">
+            <div class="actions-header">
+                <h3>¿Qué quieres hacer?</h3>
+                <p>Elige una opción y solo se mostrará el formulario o información que necesitas.</p>
+            </div>
+
+            <div class="quick-actions">
+                <button type="button" class="action-btn" onclick="showAction('recargar', this)">
+                    <div class="action-icon">➕</div>
+                    <strong>Recargar</strong>
+                    <span>Añadir saldo</span>
+                </button>
+
+                <button type="button" class="action-btn" onclick="showAction('retirar', this)">
+                    <div class="action-icon">➖</div>
+                    <strong>Retirar</strong>
+                    <span>Sacar dinero</span>
+                </button>
+
+                <button type="button" class="action-btn" onclick="showAction('transferir', this)">
+                    <div class="action-icon">↔️</div>
+                    <strong>Transferir</strong>
+                    <span>Entre mis billeteras</span>
+                </button>
+
+                <button type="button" class="action-btn" onclick="showAction('externa', this)">
+                    <div class="action-icon">👥</div>
+                    <strong>A otro usuario</strong>
+                    <span>Transferencia externa</span>
+                </button>
+
+                <button type="button" class="action-btn" onclick="showAction('programar', this)">
+                    <div class="action-icon">⏰</div>
+                    <strong>Programar</strong>
+                    <span>Operación futura</span>
+                </button>
+
+                <button type="button" class="action-btn" onclick="showAction('editar', this)">
+                    <div class="action-icon">⚙️</div>
+                    <strong>Editar usuario</strong>
+                    <span>Datos básicos</span>
+                </button>
+
+                <button type="button" class="action-btn" onclick="showAction('movimientos', this)">
+                    <div class="action-icon">📋</div>
+                    <strong>Ver movimientos</strong>
+                    <span>Historial del usuario</span>
+                </button>
+            </div>
+
+            <div class="forms-area">
+                <div id="default-form" class="default-message">
+                    <div>💳</div>
+                    <strong>Selecciona una acción</strong>
+                    <p>Primero eliges qué quieres hacer y luego llenas solo los datos necesarios.</p>
+                </div>
+
+                <div id="recargar" class="action-form">
+                    <h3>Recargar billetera</h3>
+                    <p class="section-subtitle">Elige una de tus billeteras y agrega saldo.</p>
+
+                    <form th:action="@{/transaccion/recarga}" method="post">
+                        <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Billetera</label>
+                                <select name="billeteraId" required>
+                                    <option value="">Selecciona una billetera</option>
+                                    <option th:each="b : ${usuario.billeteras}"
+                                            th:value="${b.id}"
+                                            th:text="${b.nombre + ' - ' + b.tipo + ' - $' + #numbers.formatDecimal(b.saldo,0,'COMMA',0,'POINT')}">
+                                        Billetera
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Monto</label>
+                                <input type="number" name="monto" placeholder="100000" min="1" required/>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-green">Recargar</button>
+                    </form>
+                </div>
+
+                <div id="retirar" class="action-form">
+                    <h3>Retirar dinero</h3>
+                    <p class="section-subtitle">Elige la billetera desde la que deseas retirar.</p>
+
+                    <form th:action="@{/transaccion/retiro}" method="post">
+                        <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Billetera</label>
+                                <select name="billeteraId" required>
+                                    <option value="">Selecciona una billetera</option>
+                                    <option th:each="b : ${usuario.billeteras}"
+                                            th:value="${b.id}"
+                                            th:text="${b.nombre + ' - ' + b.tipo + ' - $' + #numbers.formatDecimal(b.saldo,0,'COMMA',0,'POINT')}">
+                                        Billetera
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Monto</label>
+                                <input type="number" name="monto" placeholder="50000" min="1" required/>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-red">Retirar</button>
+                    </form>
+                </div>
+
+                <div id="transferir" class="action-form">
+                    <h3>Transferir entre mis billeteras</h3>
+                    <p class="section-subtitle">Solo aparecen billeteras asociadas a este usuario.</p>
+
+                    <form th:action="@{/transaccion/transferencia}" method="post">
+                        <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Billetera origen</label>
+                                <select name="origenId" required>
+                                    <option value="">Selecciona origen</option>
+                                    <option th:each="b : ${usuario.billeteras}"
+                                            th:value="${b.id}"
+                                            th:text="${b.nombre + ' - ' + b.tipo + ' - $' + #numbers.formatDecimal(b.saldo,0,'COMMA',0,'POINT')}">
+                                        Origen
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Billetera destino</label>
+                                <select name="destinoId" required>
+                                    <option value="">Selecciona destino</option>
+                                    <option th:each="b : ${usuario.billeteras}"
+                                            th:value="${b.id}"
+                                            th:text="${b.nombre + ' - ' + b.tipo + ' - $' + #numbers.formatDecimal(b.saldo,0,'COMMA',0,'POINT')}">
+                                        Destino
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="form-group full">
+                                <label>Monto</label>
+                                <input type="number" name="monto" placeholder="50000" min="1" required/>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn">Transferir</button>
+                    </form>
+                </div>
+
+                <div id="externa" class="action-form">
+                    <h3>Transferir a otro usuario</h3>
+                    <p class="section-subtitle">
+                        Escribe el ID del usuario destino y el sistema cargará sus billeteras automáticamente.
+                    </p>
+
+                    <form th:action="@{/transaccion/transferencia-externa}" method="post">
+                        <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Mi billetera origen</label>
+                                <select name="origenId" required>
+                                    <option value="">Selecciona mi billetera</option>
+                                    <option th:each="b : ${usuario.billeteras}"
+                                            th:value="${b.id}"
+                                            th:text="${b.nombre + ' - ' + b.tipo + ' - $' + #numbers.formatDecimal(b.saldo,0,'COMMA',0,'POINT')}">
+                                        Billetera
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>ID usuario destino</label>
+                                <input type="text"
+                                       id="destinoUsuarioIdInput"
+                                       name="destinoUsuarioId"
+                                       placeholder="Ej: U002"
+                                       autocomplete="off"
+                                       required/>
+                                <small id="estadoCargaBilleteras" style="color:#64748b;font-weight:700;margin-top:4px;">
+                                    Escribe el ID para buscar sus billeteras.
+                                </small>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Billetera destino</label>
+                                <select id="destinoBilleteraSelect" name="destinoBilleteraId" required disabled>
+                                    <option value="">Primero escribe el ID del usuario destino</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Monto</label>
+                                <input type="number" name="monto" placeholder="50000" min="1" required/>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-purple">Transferir externo</button>
+                    </form>
+                </div>
+
+                <div id="programar" class="action-form">
+                    <h3>Programar transacción</h3>
+                    <p class="section-subtitle">Agenda una transferencia entre tus billeteras.</p>
+
+                    <form th:action="@{/transaccion/programar}" method="post">
+                        <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Billetera origen</label>
+                                <select name="origenId" required>
+                                    <option value="">Selecciona origen</option>
+                                    <option th:each="b : ${usuario.billeteras}"
+                                            th:value="${b.id}"
+                                            th:text="${b.nombre + ' - ' + b.tipo + ' - $' + #numbers.formatDecimal(b.saldo,0,'COMMA',0,'POINT')}">
+                                        Origen
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Billetera destino</label>
+                                <select name="destinoId" required>
+                                    <option value="">Selecciona destino</option>
+                                    <option th:each="b : ${usuario.billeteras}"
+                                            th:value="${b.id}"
+                                            th:text="${b.nombre + ' - ' + b.tipo + ' - $' + #numbers.formatDecimal(b.saldo,0,'COMMA',0,'POINT')}">
+                                        Destino
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Monto</label>
+                                <input type="number" name="monto" placeholder="50000" min="1" required/>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Fecha de ejecución</label>
+                                <input type="datetime-local" name="fechaEjecucion" required/>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-purple">Programar transacción</button>
+                    </form>
+
+                    <form th:action="@{/transaccion/ejecutarProgramadas}" method="post" style="margin-top:12px;">
+                        <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
+                        <button type="submit" class="btn btn-soft">Ejecutar programadas pendientes</button>
+                    </form>
+                </div>
+
+                <div id="editar" class="action-form">
+                    <h3>Editar usuario</h3>
+                    <p class="section-subtitle">Actualiza la información básica del usuario.</p>
+
+                    <form th:action="@{/usuario/modificar}" method="post">
+                        <input type="hidden" name="id" th:value="${usuario.id}"/>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Nombre</label>
+                                <input type="text" name="nombre" th:value="${usuario.nombre}" required/>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Teléfono</label>
+                                <input type="text" name="telefono" th:value="${usuario.telefono}" required/>
+                            </div>
+
+                            <div class="form-group full">
+                                <label>Email</label>
+                                <input type="email" name="email" th:value="${usuario.email}" required/>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn">Guardar cambios</button>
+                    </form>
+
+                    <form th:action="@{/usuario/eliminar}" method="post" style="margin-top:12px;">
+                        <input type="hidden" name="id" th:value="${usuario.id}"/>
+                        <button type="submit" class="btn btn-red"
+                                onclick="return confirm('¿Seguro que deseas eliminar este usuario?')">
+                            Eliminar usuario
+                        </button>
+                    </form>
+                </div>
+
+                <div id="movimientos" class="action-form">
+    <h3>Movimientos del usuario</h3>
+    <p class="section-subtitle">
+        Historial propio de recargas, retiros, transferencias y operaciones rechazadas.
+    </p>
+
+    <div th:if="${not #lists.isEmpty(historial)}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span id="pag-info" style="font-size:13px;color:#64748b;font-weight:700;"></span>
+            <div style="display:flex;gap:8px;">
+                <button onclick="cambiarPagina(-1)" id="btn-anterior"
+                        style="background:#e0f2fe;color:#0369a1;border:none;border-radius:10px;
+                               padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer;">
+                    ← Anterior
+                </button>
+                <button onclick="cambiarPagina(1)" id="btn-siguiente"
+                        style="background:#e0f2fe;color:#0369a1;border:none;border-radius:10px;
+                               padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer;">
+                    Siguiente →
+                </button>
             </div>
         </div>
-        <p th:if="${#lists.isEmpty(historial)}" style="color:#64748b;font-size:13px;">Sin transacciones aún.</p>
+
+        <div class="movimientos-scroll">
+            <table class="movimientos-table">
+                <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Monto</th>
+                    <th>Estado</th>
+                    <th>Riesgo</th>
+                </tr>
+                </thead>
+                <tbody id="tabla-movimientos">
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <div class="section" th:if="${not #lists.isEmpty(alertas)}">
-        <h3>Alertas</h3>
-        <div th:each="alerta : ${alertas}" class="alerta">
-            <span th:text="${alerta.mensaje}">Mensaje</span>
+    <p th:if="${#lists.isEmpty(historial)}" class="empty">
+        Este usuario todavía no tiene movimientos registrados.
+    </p>
+</div>
+
+            </div>
         </div>
+    </div>
+</div>
+
+<script>
+    function toggleMenu(event) {
+        event.stopPropagation();
+        const menu = document.getElementById('dropdownMenu');
+        if (menu) {
+            menu.classList.toggle('show');
+        }
+    }
+
+    document.addEventListener('click', function(event) {
+        const menu = document.getElementById('dropdownMenu');
+        const wrapper = document.querySelector('.menu-wrapper');
+
+        if (menu && wrapper && !wrapper.contains(event.target)) {
+            menu.classList.remove('show');
+        }
+    });
+
+    function showAction(actionId, button) {
+        const defaultForm = document.getElementById('default-form');
+
+        if (defaultForm) {
+            defaultForm.style.display = 'none';
+        }
+
+        document.querySelectorAll('.action-form').forEach(function(form) {
+            form.classList.remove('active');
+        });
+
+        document.querySelectorAll('.action-btn').forEach(function(btn) {
+            btn.classList.remove('active');
+        });
+
+        const selectedForm = document.getElementById(actionId);
+
+        if (selectedForm) {
+            selectedForm.classList.add('active');
+            button.classList.add('active');
+
+            setTimeout(function () {
+                selectedForm.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }, 120);
+        }
+    }
+
+
+    let temporizadorBusquedaBilleteras = null;
+
+    function limpiarBilleterasDestino(mensaje) {
+        const select = document.getElementById('destinoBilleteraSelect');
+        const estado = document.getElementById('estadoCargaBilleteras');
+
+        if (!select) {
+            return;
+        }
+
+        select.innerHTML = '';
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = mensaje;
+        select.appendChild(option);
+        select.disabled = true;
+
+        if (estado) {
+            estado.textContent = mensaje;
+            estado.style.color = '#64748b';
+        }
+    }
+
+    function cargarBilleterasDestino(usuarioId) {
+        const select = document.getElementById('destinoBilleteraSelect');
+        const estado = document.getElementById('estadoCargaBilleteras');
+
+        if (!select || !estado) {
+            return;
+        }
+
+        if (!usuarioId || usuarioId.trim().length === 0) {
+            limpiarBilleterasDestino('Escribe el ID para buscar sus billeteras.');
+            return;
+        }
+
+        estado.textContent = 'Buscando billeteras...';
+        estado.style.color = '#64748b';
+        select.disabled = true;
+
+        fetch('/api/usuarios/' + encodeURIComponent(usuarioId.trim()) + '/billeteras')
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('No se pudo consultar el usuario');
+                }
+                return response.json();
+            })
+            .then(function(billeteras) {
+                select.innerHTML = '';
+
+                if (!billeteras || billeteras.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'Este usuario no tiene billeteras';
+                    select.appendChild(option);
+                    select.disabled = true;
+
+                    estado.textContent = 'Este usuario no tiene billeteras disponibles.';
+                    estado.style.color = '#dc2626';
+                    return;
+                }
+
+                const primeraOpcion = document.createElement('option');
+                primeraOpcion.value = '';
+                primeraOpcion.textContent = 'Selecciona billetera destino';
+                select.appendChild(primeraOpcion);
+
+                billeteras.forEach(function(b) {
+                    const option = document.createElement('option');
+                    option.value = b.id;
+
+                    const saldo = new Intl.NumberFormat('es-CO').format(b.saldo);
+                    option.textContent = b.nombre + ' - ' + b.tipo + ' - $' + saldo;
+
+                    select.appendChild(option);
+                });
+
+                select.disabled = false;
+                estado.textContent = billeteras.length + ' billetera(s) encontrada(s).';
+                estado.style.color = '#16a34a';
+            })
+            .catch(function() {
+                limpiarBilleterasDestino('No se encontraron billeteras para ese usuario.');
+                if (estado) {
+                    estado.style.color = '#dc2626';
+                }
+            });
+    }
+
+    function prepararCargaBilleterasDestino() {
+        const input = document.getElementById('destinoUsuarioIdInput');
+
+        if (!input) {
+            return;
+        }
+
+        input.addEventListener('input', function() {
+            clearTimeout(temporizadorBusquedaBilleteras);
+
+            temporizadorBusquedaBilleteras = setTimeout(function() {
+                cargarBilleterasDestino(input.value);
+            }, 400);
+        });
+    }
+</script>
+
+<!-- Chatbot flotante -->
+<div id="chat-btn" onclick="toggleChat()"
+     style="position:fixed;bottom:28px;right:28px;width:56px;height:56px;
+            background:#2563eb;border-radius:50%;display:flex;align-items:center;
+            justify-content:center;cursor:pointer;box-shadow:0 8px 24px rgba(37,99,235,0.4);
+            z-index:9999;font-size:26px;">
+    💬
+</div>
+
+<div id="chat-box"
+     style="display:none;position:fixed;bottom:96px;right:28px;width:360px;height:480px;
+            background:#ffffff;border-radius:20px;box-shadow:0 20px 50px rgba(15,23,42,0.2);
+            z-index:9999;border:1px solid #e5e7eb;flex-direction:column;overflow:hidden;">
+    
+    <div style="background:linear-gradient(135deg,#2563eb,#06b6d4);padding:16px 20px;
+                display:flex;justify-content:space-between;align-items:center;">
+        <div>
+            <div style="color:white;font-weight:900;font-size:15px;">Asistente FintechWallet</div>
+            <div style="color:#dbeafe;font-size:12px;">Powered by IA · Siempre disponible</div>
+        </div>
+        <button onclick="toggleChat()"
+                style="background:rgba(255,255,255,0.2);border:none;color:white;
+                       border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px;">
+            ✕
+        </button>
+    </div>
+
+    <div id="chat-messages"
+         style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;
+                height:340px;">
+        <div style="background:#eff6ff;border-radius:14px 14px 14px 4px;padding:12px 14px;
+                    font-size:13px;color:#1e40af;max-width:85%;line-height:1.5;">
+            ¡Hola! Soy el asistente de FintechWallet. Puedo ayudarte con preguntas sobre billeteras, transacciones, puntos, niveles y más. ¿En qué te ayudo?
+        </div>
+    </div>
+
+    <div style="padding:12px;border-top:1px solid #e5e7eb;display:flex;gap:8px;">
+        <input id="chat-input" type="text" placeholder="Escribe tu pregunta..."
+               style="flex:1;border:1px solid #cbd5e1;border-radius:12px;padding:10px 14px;
+                      font-size:14px;outline:none;"
+               onkeydown="if(event.key==='Enter') enviarMensaje()"/>
+        <button onclick="enviarMensaje()"
+                style="background:#2563eb;color:white;border:none;border-radius:12px;
+                       padding:10px 16px;cursor:pointer;font-weight:800;font-size:14px;">
+            ➤
+        </button>
+    </div>
+</div>
+
+<script>
+function toggleChat() {
+    const box = document.getElementById('chat-box');
+    box.style.display = box.style.display === 'none' ? 'flex' : 'none';
+}
+
+async function enviarMensaje() {
+    const input = document.getElementById('chat-input');
+    const messages = document.getElementById('chat-messages');
+    const texto = input.value.trim();
+    if (!texto) return;
+
+    messages.innerHTML += `
+        <div style="background:#2563eb;color:white;border-radius:14px 14px 4px 14px;
+                    padding:12px 14px;font-size:13px;max-width:85%;align-self:flex-end;
+                    line-height:1.5;margin-left:auto;">
+            ${texto}
+        </div>`;
+    input.value = '';
+    messages.scrollTop = messages.scrollHeight;
+
+    const loadingId = 'loading-' + Date.now();
+    messages.innerHTML += `
+        <div id="${loadingId}" style="background:#f1f5f9;border-radius:14px 14px 14px 4px;
+                    padding:12px 14px;font-size:13px;color:#64748b;max-width:85%;">
+            Escribiendo...
+        </div>`;
+    messages.scrollTop = messages.scrollHeight;
+
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mensaje: texto })
+        });
+        const data = await response.json();
+
+        document.getElementById(loadingId).remove();
+        messages.innerHTML += `
+            <div style="background:#eff6ff;border-radius:14px 14px 14px 4px;padding:12px 14px;
+                        font-size:13px;color:#1e40af;max-width:85%;line-height:1.5;">
+                ${data.respuesta}
+            </div>`;
+        messages.scrollTop = messages.scrollHeight;
+    } catch (error) {
+        document.getElementById(loadingId).remove();
+        messages.innerHTML += `
+            <div style="background:#fee2e2;border-radius:14px;padding:12px 14px;
+                        font-size:13px;color:#dc2626;max-width:85%;">
+                Error al conectar. Intenta de nuevo.
+            </div>`;
+    }
+}
+</script>
+<script th:src="@{/js/toast.js}"></script>
+<script th:src="@{/js/validaciones.js}"></script>
+
+<script th:inline="javascript">
+    const movimientos = /*[[${historial}]]*/ [];
+    const porPagina = 5;
+    let paginaActual = 0;
+
+    function renderizarTabla() {
+        const tbody = document.getElementById('tabla-movimientos');
+        const info = document.getElementById('pag-info');
+        const btnAnterior = document.getElementById('btn-anterior');
+        const btnSiguiente = document.getElementById('btn-siguiente');
+
+        if (!tbody || movimientos.length === 0) return;
+
+        const inicio = paginaActual * porPagina;
+        const fin = Math.min(inicio + porPagina, movimientos.length);
+        const pagina = movimientos.slice(inicio, fin);
+        const totalPaginas = Math.ceil(movimientos.length / porPagina);
+
+        tbody.innerHTML = '';
+
+        pagina.forEach(function (txn) {
+            const fecha = new Date(txn.fecha).toLocaleString('es-CO');
+            const monto = new Intl.NumberFormat('es-CO').format(txn.valor);
+            const riesgo = txn.nivelRiesgo || 'BAJO';
+
+            const colorTipo = txn.tipo === 'RECARGA' ? '#16a34a' :
+                              txn.tipo === 'RETIRO' ? '#dc2626' : '#2563eb';
+
+            const colorEstado = txn.estado === 'RECHAZADA' ? 'estado-rechazada' :
+                                txn.estado === 'REVERTIDA' ? 'estado-revertida' : 'estado-completada';
+
+            const colorRiesgo = riesgo === 'ALTO' ? 'estado-rechazada' :
+                                riesgo === 'MEDIO' ? 'estado-revertida' : 'estado-completada';
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${fecha}</td>
+                    <td><span style="color:${colorTipo};font-weight:900;">${txn.tipo}</span></td>
+                    <td class="movimiento-monto">$${monto}</td>
+                    <td><span class="estado-pill ${colorEstado}">${txn.estado}</span></td>
+                    <td><span class="estado-pill ${colorRiesgo}">${riesgo}</span></td>
+                </tr>`;
+        });
+
+        info.textContent = `Página ${paginaActual + 1} de ${totalPaginas} — ${movimientos.length} movimientos`;
+        btnAnterior.disabled = paginaActual === 0;
+        btnSiguiente.disabled = paginaActual >= totalPaginas - 1;
+        btnAnterior.style.opacity = paginaActual === 0 ? '0.4' : '1';
+        btnSiguiente.style.opacity = paginaActual >= totalPaginas - 1 ? '0.4' : '1';
+    }
+
+    function cambiarPagina(direccion) {
+        const totalPaginas = Math.ceil(movimientos.length / porPagina);
+        paginaActual = Math.max(0, Math.min(paginaActual + direccion, totalPaginas - 1));
+        renderizarTabla();
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        renderizarTabla();
+    });
+    document.addEventListener("DOMContentLoaded", function () {
+    const toasts = document.querySelectorAll(".toast-center");
+
+    toasts.forEach(function (toast) {
+        setTimeout(function () {
+            toast.classList.add("hide");
+
+            setTimeout(function () {
+                toast.remove();
+            }, 300);
+        }, 3000);
+    });
+});
+</script>
+<script th:inline="javascript">
+    const todosMovimientos = /*[[${historial}]]*/ [];
+
+    function verMovimientosBilletera(billeteraId, billeteraNombre) {
+        const filtrados = todosMovimientos.filter(function(txn) {
+            return txn.billeteraOrigenId === billeteraId ||
+                   txn.billeteraDestinoId === billeteraId;
+        });
+
+        let html = `<h3 style="margin-bottom:8px;">📋 ${billeteraNombre}</h3>
+                    <p style="font-size:13px;color:#64748b;margin-bottom:14px;">
+                        ${filtrados.length} movimiento(s) registrado(s)
+                    </p>`;
+
+        if (filtrados.length === 0) {
+            html += `<p style="color:#64748b;background:#f8fafc;border:1px dashed #cbd5e1;
+                               border-radius:14px;padding:20px;text-align:center;font-size:14px;">
+                        Esta billetera no tiene movimientos registrados.
+                    </p>`;
+        } else {
+            html += `<div style="overflow-x:auto;border:1px solid #e5e7eb;border-radius:16px;">
+                        <table style="width:100%;border-collapse:collapse;min-width:500px;">
+                            <thead>
+                                <tr style="background:#f8fafc;">
+                                    <th style="text-align:left;padding:12px;color:#64748b;font-size:12px;
+                                               text-transform:uppercase;border-bottom:1px solid #e5e7eb;">Fecha</th>
+                                    <th style="text-align:left;padding:12px;color:#64748b;font-size:12px;
+                                               text-transform:uppercase;border-bottom:1px solid #e5e7eb;">Tipo</th>
+                                    <th style="text-align:left;padding:12px;color:#64748b;font-size:12px;
+                                               text-transform:uppercase;border-bottom:1px solid #e5e7eb;">Monto</th>
+                                    <th style="text-align:left;padding:12px;color:#64748b;font-size:12px;
+                                               text-transform:uppercase;border-bottom:1px solid #e5e7eb;">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+
+            filtrados.forEach(function(txn) {
+                const fecha = new Date(txn.fecha).toLocaleString('es-CO');
+                const monto = new Intl.NumberFormat('es-CO').format(txn.valor);
+                const colorTipo = txn.tipo === 'RECARGA' ? '#16a34a' :
+                                  txn.tipo === 'RETIRO' ? '#dc2626' : '#2563eb';
+                const colorEstado = txn.estado === 'RECHAZADA' ? '#fee2e2' :
+                                    txn.estado === 'REVERTIDA' ? '#fef3c7' : '#dcfce7';
+                const colorEstadoTexto = txn.estado === 'RECHAZADA' ? '#991b1b' :
+                                         txn.estado === 'REVERTIDA' ? '#92400e' : '#166534';
+
+                html += `<tr style="border-bottom:1px solid #f1f5f9;">
+                            <td style="padding:12px;font-size:13px;color:#64748b;">${fecha}</td>
+                            <td style="padding:12px;font-weight:900;color:${colorTipo};">${txn.tipo}</td>
+                            <td style="padding:12px;font-weight:900;color:#0f172a;">$${monto}</td>
+                            <td style="padding:12px;">
+                                <span style="background:${colorEstado};color:${colorEstadoTexto};
+                                             padding:4px 10px;border-radius:999px;font-size:11px;
+                                             font-weight:900;">${txn.estado}</span>
+                            </td>
+                        </tr>`;
+            });
+
+            html += `</tbody></table></div>`;
+        }
+
+        // Mostrar en modal
+        const modal = document.getElementById('modal-billetera');
+        const modalContenido = document.getElementById('modal-contenido');
+        modalContenido.innerHTML = html;
+        modal.style.display = 'flex';
+    }
+     
+</script>
+
+<!-- Modal historial por billetera -->
+<div id="modal-billetera"
+     style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.5);
+            z-index:9998;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:#ffffff;border-radius:22px;padding:26px;max-width:680px;
+                width:100%;max-height:80vh;overflow-y:auto;
+                box-shadow:0 25px 60px rgba(15,23,42,0.25);">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+            <button onclick="document.getElementById('modal-billetera').style.display='none'"
+                    style="background:#f1f5f9;border:none;border-radius:10px;padding:8px 14px;
+                           font-size:13px;font-weight:800;cursor:pointer;color:#475569;">
+                ✕ Cerrar
+            </button>
+        </div>
+        <div id="modal-contenido"></div>
     </div>
 </div>
 </body>

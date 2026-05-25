@@ -1,8 +1,6 @@
 package com.fintech.billetera.estructuras;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 import com.fintech.billetera.modelos.TipoTransaccion;
 import com.fintech.billetera.modelos.Transaccion;
@@ -47,50 +45,72 @@ public class HistorialTransacciones {
         return false;
     }
 
-    public List<Transaccion> getUltimas(int n) {
-        List<Transaccion> resultado = new ArrayList<>();
+    public ListaSimple<Transaccion> getUltimas(int n) {
+        ListaSimple<Transaccion> resultado = new ListaSimple<>();
         NodoTransaccion actual = cola;
         int count = 0;
         while (actual != null && count < n) {
-            resultado.add(0, actual.datos);
+            resultado.agregarAlInicio(actual.datos);
             actual = actual.anterior;
             count++;
         }
         return resultado;
     }
 
-    public List<Transaccion> filtrarPorTipo(TipoTransaccion tipo) {
-        List<Transaccion> resultado = new ArrayList<>();
+    public ListaSimple<Transaccion> filtrarPorTipo(TipoTransaccion tipo) {
+        ListaSimple<Transaccion> resultado = new ListaSimple<>();
         NodoTransaccion actual = cabeza;
         while (actual != null) {
-            if (actual.datos.getTipo() == tipo) resultado.add(actual.datos);
+            if (actual.datos.getTipo() == tipo) resultado.agregar(actual.datos);
             actual = actual.siguiente;
         }
         return resultado;
     }
 
-    public List<Transaccion> filtrarPorFecha(Date inicio, Date fin) {
-        List<Transaccion> resultado = new ArrayList<>();
+    public ListaSimple<Transaccion> filtrarPorFecha(Date inicio, Date fin) {
+        ListaSimple<Transaccion> resultado = new ListaSimple<>();
         NodoTransaccion actual = cabeza;
         while (actual != null) {
             Date fecha = actual.datos.getFecha();
-            if (!fecha.before(inicio) && !fecha.after(fin)) resultado.add(actual.datos);
+            if (!fecha.before(inicio) && !fecha.after(fin)) resultado.agregar(actual.datos);
             actual = actual.siguiente;
         }
         return resultado;
     }
 
-    public List<Transaccion> getTopPorValor(int n) {
-        List<Transaccion> todas = getTodas();
-        todas.sort((a, b) -> Double.compare(b.getValor(), a.getValor()));
-        return todas.subList(0, Math.min(n, todas.size()));
+    public ListaSimple<Transaccion> getTopPorValor(int n) {
+    ListaSimple<Transaccion> todas = getTodas();
+    int tam = todas.getTamanio();
+
+    // Copiar a array para poder hacer intercambios
+    Transaccion[] arr = new Transaccion[tam];
+    for (int i = 0; i < tam; i++) {
+        arr[i] = todas.obtener(i);
     }
 
-    public List<Transaccion> getTodas() {
-        List<Transaccion> resultado = new ArrayList<>();
+    // Ordenamiento burbuja descendente por valor
+    for (int i = 0; i < tam - 1; i++) {
+        for (int j = 0; j < tam - i - 1; j++) {
+            if (arr[j].getValor() < arr[j + 1].getValor()) {
+                Transaccion temp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
+            }
+        }
+    }
+
+    ListaSimple<Transaccion> top = new ListaSimple<>();
+    for (int i = 0; i < Math.min(n, tam); i++) {
+        top.agregar(arr[i]);
+    }
+    return top;
+}
+
+    public ListaSimple<Transaccion> getTodas() {
+        ListaSimple<Transaccion> resultado = new ListaSimple<>();
         NodoTransaccion actual = cabeza;
         while (actual != null) {
-            resultado.add(actual.datos);
+            resultado.agregar(actual.datos);
             actual = actual.siguiente;
         }
         return resultado;

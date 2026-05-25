@@ -1,49 +1,56 @@
 package com.fintech.billetera.servicios;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.fintech.billetera.estructuras.ArbolFidelizacion;
 import com.fintech.billetera.estructuras.GrafoTransacciones;
 import com.fintech.billetera.estructuras.HistorialTransacciones;
+import com.fintech.billetera.estructuras.ListaSimple;
+import com.fintech.billetera.estructuras.MapaHash;
 import com.fintech.billetera.modelos.TipoTransaccion;
 import com.fintech.billetera.modelos.Transaccion;
-import com.fintech.billetera.modelos.Usuario;
 
 public class MotorAnalitica {
-    private HashMap<String, Integer> cacheActividad;
+    private MapaHash<String, Integer> cacheActividad;
 
     public MotorAnalitica() {
-        this.cacheActividad = new HashMap<>();
+        this.cacheActividad = new MapaHash<>();
     }
 
-    public List<String> billeterasMasActivas(List<Transaccion> transacciones) {
-        Map<String, Integer> conteo = new HashMap<>();
-        for (Transaccion t : transacciones) {
-            if (t.getBilleteraOrigenId() != null)
-                conteo.merge(t.getBilleteraOrigenId(), 1, Integer::sum);
-            if (t.getBilleteraDestinoId() != null)
-                conteo.merge(t.getBilleteraDestinoId(), 1, Integer::sum);
+    public ListaSimple<String> billeterasMasActivas(ListaSimple<Transaccion> transacciones) {
+        MapaHash<String, Integer> conteo = new MapaHash<>();
+        java.util.Iterator<Transaccion> it = transacciones.iterator();
+        while (it.hasNext()) {
+            Transaccion t = it.next();
+            if (t.getBilleteraOrigenId() != null) {
+                Integer c = conteo.obtener(t.getBilleteraOrigenId());
+                conteo.poner(t.getBilleteraOrigenId(), c == null ? 1 : c + 1);
+            }
+            if (t.getBilleteraDestinoId() != null) {
+                Integer c = conteo.obtener(t.getBilleteraDestinoId());
+                conteo.poner(t.getBilleteraDestinoId(), c == null ? 1 : c + 1);
+            }
         }
-        List<String> resultado = new ArrayList<>(conteo.keySet());
-        resultado.sort((a, b) -> conteo.get(b) - conteo.get(a));
-        return resultado;
+        return conteo.claves();
     }
 
-    public Map<TipoTransaccion, Integer> frecuenciaPorTipo(List<Transaccion> transacciones) {
-        Map<TipoTransaccion, Integer> conteo = new HashMap<>();
-        for (Transaccion t : transacciones) {
-            conteo.merge(t.getTipo(), 1, Integer::sum);
+    public MapaHash<TipoTransaccion, Integer> frecuenciaPorTipo(ListaSimple<Transaccion> transacciones) {
+        MapaHash<TipoTransaccion, Integer> conteo = new MapaHash<>();
+        java.util.Iterator<Transaccion> it = transacciones.iterator();
+        while (it.hasNext()) {
+            Transaccion t = it.next();
+            Integer c = conteo.obtener(t.getTipo());
+            conteo.poner(t.getTipo(), c == null ? 1 : c + 1);
         }
         return conteo;
     }
 
-    public double montoTotalRango(List<Transaccion> transacciones, Date inicio, Date fin) {
+    public double montoTotalRango(ListaSimple<Transaccion> transacciones, Date inicio, Date fin) {
         double total = 0;
-        for (Transaccion t : transacciones) {
+        java.util.Iterator<Transaccion> it = transacciones.iterator();
+        while (it.hasNext()) {
+            Transaccion t = it.next();
             if (!t.getFecha().before(inicio) && !t.getFecha().after(fin)) {
                 total += t.getValor();
             }
@@ -51,35 +58,108 @@ public class MotorAnalitica {
         return total;
     }
 
-    public List<Transaccion> topTransaccionesPorValor(List<Transaccion> transacciones, int n) {
-        List<Transaccion> copia = new ArrayList<>(transacciones);
-        copia.sort((a, b) -> Double.compare(b.getValor(), a.getValor()));
-        return copia.subList(0, Math.min(n, copia.size()));
+    public ListaSimple<Transaccion> topTransaccionesPorValor(ListaSimple<Transaccion> transacciones, int n) {
+        ListaSimple<Transaccion> resultado = new ListaSimple<>();
+        java.util.Iterator<Transaccion> it = transacciones.iterator();
+        while (it.hasNext()) resultado.agregar(it.next());
+        return resultado;
     }
 
-    public Usuario usuarioMasActivo(List<Usuario> usuarios,
-                                     Map<String, HistorialTransacciones> historiales) {
-        Usuario masActivo = null;
-        int maxTxn = 0;
-        for (Usuario u : usuarios) {
-            HistorialTransacciones h = historiales.get(u.getId());
-            if (h != null && h.getTamanio() > maxTxn) {
-                maxTxn = h.getTamanio();
-                masActivo = u;
-            }
+    public String usuarioConMasTransferencias(List<Transaccion> transacciones){
+
+    java.util.HashMap<String, Integer> conteo = new java.util.HashMap<>();
+
+    for(Transaccion t : transacciones){
+
+        if(t.getUsuarioId() != null &&
+           t.getTipo() == TipoTransaccion.TRANSFERENCIA){
+
+            conteo.put(
+                t.getUsuarioId(),
+                conteo.getOrDefault(t.getUsuarioId(), 0) + 1
+            );
         }
-        return masActivo;
     }
 
-    public Map<String, Object> compararRendimiento(HistorialTransacciones lista,
-                                                    ArbolFidelizacion arbol,
-                                                    GrafoTransacciones grafo) {
-        Map<String, Object> reporte = new HashMap<>();
-        reporte.put("totalTransacciones", lista.getTamanio());
-        reporte.put("totalUsuariosArbol", arbol.getOrdenadoPorPuntos().size());
-        reporte.put("totalVerticesGrafo", grafo.getTotalVertices());
-        reporte.put("totalAristasGrafo", grafo.getTotalAristas());
-        reporte.put("hayCiclos", grafo.detectarCiclo());
+    String mejorUsuario = null;
+    int max = 0;
+
+    for(String id : conteo.keySet()){
+
+        if(conteo.get(id) > max){
+            max = conteo.get(id);
+            mejorUsuario = id;
+        }
+    }
+
+    return mejorUsuario;
+}
+    public TipoTransaccion categoriaMasActiva(List<Transaccion> transacciones){
+
+    java.util.HashMap<TipoTransaccion, Integer> conteo =
+            new java.util.HashMap<>();
+
+    for(Transaccion t : transacciones){
+
+        conteo.put(
+            t.getTipo(),
+            conteo.getOrDefault(t.getTipo(), 0) + 1
+        );
+    }
+
+    TipoTransaccion mejor = null;
+    int max = 0;
+
+    for(TipoTransaccion tipo : conteo.keySet()){
+
+        if(conteo.get(tipo) > max){
+            max = conteo.get(tipo);
+            mejor = tipo;
+        }
+    }
+
+    return mejor;
+   }
+    public int conexionesUsuario(
+        GrafoTransacciones grafo){
+
+    return grafo.getTotalAristas();
+    }
+
+    public MapaHash<String, Object> compararRendimiento(HistorialTransacciones lista,
+                                                ArbolFidelizacion arbol,
+                                                GrafoTransacciones grafo) {
+                                                long inicioLista = System.nanoTime();
+                                                lista.getTamanio();
+                                                long finLista = System.nanoTime();
+
+                                                long inicioArbol = System.nanoTime();
+                                                arbol.getOrdenadoPorPuntos();
+                                                long finArbol = System.nanoTime();
+
+long inicioGrafo = System.nanoTime();
+grafo.getTotalAristas();
+long finGrafo = System.nanoTime();
+        MapaHash<String, Object> reporte = new MapaHash<>();
+        reporte.poner("totalTransacciones", lista.getTamanio());
+        reporte.poner("totalUsuariosArbol", arbol.getOrdenadoPorPuntos().getTamanio());
+        reporte.poner("totalVerticesGrafo", grafo.getTotalVertices());
+        reporte.poner("totalAristasGrafo", grafo.getTotalAristas());
+        reporte.poner("hayCiclos", grafo.detectarCiclo());
+        reporte.poner(
+        "tiempoListaNs",
+        (finLista - inicioLista)
+);
+
+reporte.poner(
+        "tiempoArbolNs",
+        (finArbol - inicioArbol)
+);
+
+reporte.poner(
+        "tiempoGrafoNs",
+        (finGrafo - inicioGrafo)
+);
         return reporte;
     }
 }

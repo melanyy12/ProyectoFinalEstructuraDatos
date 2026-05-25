@@ -1,7 +1,15 @@
 package com.fintech.billetera.modelos;
 
-import jakarta.persistence.*;
 import java.util.Date;
+
+import com.fintech.billetera.estructuras.HistorialTransacciones;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
 @Entity
 @Table(name = "billeteras")
@@ -11,10 +19,13 @@ public class Billetera {
     private String id;
     private String nombre;
 
-    @Enumerated(EnumType.STRING)
-    private TipoBilletera tipo;
+   @Enumerated(EnumType.STRING)
+   private TipoBilletera tipo;
 
-    private double saldo;
+   @Transient
+   private HistorialTransacciones historial;
+
+   private double saldo;
 
     @Enumerated(EnumType.STRING)
     private EstadoBilletera estado;
@@ -32,12 +43,20 @@ public class Billetera {
         this.saldo = 0.0;
         this.estado = EstadoBilletera.ACTIVA;
         this.fechaCreacion = new Date();
+        this.historial = new HistorialTransacciones();
     }
 
     public boolean recargar(double monto) {
         if (monto <= 0) return false;
         this.saldo += monto;
         return true;
+    }
+
+    public void agregarTransaccion(Transaccion t) {
+    historial.agregar(t);
+    }    
+    public HistorialTransacciones getHistorial() {
+    return historial;
     }
 
     public boolean retirar(double monto) {

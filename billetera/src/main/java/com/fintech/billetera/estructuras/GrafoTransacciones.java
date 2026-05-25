@@ -1,113 +1,168 @@
 package com.fintech.billetera.estructuras;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-
 import com.fintech.billetera.modelos.Usuario;
 
 public class GrafoTransacciones {
-    private Map<String, Usuario> vertices;
-    private Map<String, List<AristaGrafo>> listaAdyacencia;
+    private MapaHash<String, Usuario> vertices;
+    private MapaHash<String, ListaSimple<AristaGrafo>> listaAdyacencia;
 
     public GrafoTransacciones() {
-        this.vertices = new HashMap<>();
-        this.listaAdyacencia = new HashMap<>();
+        this.vertices = new MapaHash<>();
+        this.listaAdyacencia = new MapaHash<>();
     }
 
     public void agregarVertice(Usuario usuario) {
-        vertices.put(usuario.getId(), usuario);
-        listaAdyacencia.putIfAbsent(usuario.getId(), new ArrayList<>());
+        vertices.poner(usuario.getId(), usuario);
+        if (!listaAdyacencia.contieneClave(usuario.getId())) {
+            listaAdyacencia.poner(usuario.getId(), new ListaSimple<>());
+        }
     }
 
     public void agregarArista(String origenId, String destinoId, double monto) {
-        listaAdyacencia.putIfAbsent(origenId, new ArrayList<>());
-        List<AristaGrafo> aristas = listaAdyacencia.get(origenId);
-        for (AristaGrafo arista : aristas) {
+        if (!listaAdyacencia.contieneClave(origenId)) {
+            listaAdyacencia.poner(origenId, new ListaSimple<>());
+        }
+        ListaSimple<AristaGrafo> aristas = listaAdyacencia.obtener(origenId);
+        java.util.Iterator<AristaGrafo> it = aristas.iterator();
+        while (it.hasNext()) {
+            AristaGrafo arista = it.next();
             if (arista.getDestinoId().equals(destinoId)) {
                 arista.incrementar(monto);
                 return;
             }
         }
-        aristas.add(new AristaGrafo(origenId, destinoId, monto));
+        aristas.agregar(new AristaGrafo(origenId, destinoId, monto));
     }
 
-    public List<String> BFS(String origenId) {
-        List<String> visitados = new ArrayList<>();
-        Queue<String> cola = new LinkedList<>();
-        Map<String, Boolean> visto = new HashMap<>();
-        cola.add(origenId);
-        visto.put(origenId, true);
-        while (!cola.isEmpty()) {
-            String actual = cola.poll();
-            visitados.add(actual);
-            List<AristaGrafo> vecinos = listaAdyacencia.getOrDefault(actual, new ArrayList<>());
-            for (AristaGrafo arista : vecinos) {
-                if (!visto.containsKey(arista.getDestinoId())) {
-                    visto.put(arista.getDestinoId(), true);
-                    cola.add(arista.getDestinoId());
+    public ListaSimple<String> BFS(String origenId) {
+        ListaSimple<String> visitados = new ListaSimple<>();
+        ColaSimple<String> cola = new ColaSimple<>();
+        MapaHash<String, Boolean> visto = new MapaHash<>();
+        cola.encolar(origenId);
+        visto.poner(origenId, true);
+        while (!cola.estaVacia()) {
+            String actual = cola.desencolar();
+            visitados.agregar(actual);
+            ListaSimple<AristaGrafo> vecinos = listaAdyacencia.obtener(actual);
+            if (vecinos != null) {
+                java.util.Iterator<AristaGrafo> it = vecinos.iterator();
+                while (it.hasNext()) {
+                    AristaGrafo arista = it.next();
+                    if (!visto.contieneClave(arista.getDestinoId())) {
+                        visto.poner(arista.getDestinoId(), true);
+                        cola.encolar(arista.getDestinoId());
+                    }
                 }
             }
         }
         return visitados;
     }
 
-    public List<String> DFS(String origenId) {
-        List<String> visitados = new ArrayList<>();
-        Map<String, Boolean> visto = new HashMap<>();
+    public ListaSimple<String> DFS(String origenId) {
+        ListaSimple<String> visitados = new ListaSimple<>();
+        MapaHash<String, Boolean> visto = new MapaHash<>();
         DFSRec(origenId, visto, visitados);
         return visitados;
     }
 
-    private void DFSRec(String id, Map<String, Boolean> visto, List<String> visitados) {
-        visto.put(id, true);
-        visitados.add(id);
-        List<AristaGrafo> vecinos = listaAdyacencia.getOrDefault(id, new ArrayList<>());
-        for (AristaGrafo arista : vecinos) {
-            if (!visto.containsKey(arista.getDestinoId())) {
-                DFSRec(arista.getDestinoId(), visto, visitados);
+    private void DFSRec(String id, MapaHash<String, Boolean> visto, ListaSimple<String> visitados) {
+        visto.poner(id, true);
+        visitados.agregar(id);
+        ListaSimple<AristaGrafo> vecinos = listaAdyacencia.obtener(id);
+        if (vecinos != null) {
+            java.util.Iterator<AristaGrafo> it = vecinos.iterator();
+            while (it.hasNext()) {
+                AristaGrafo arista = it.next();
+                if (!visto.contieneClave(arista.getDestinoId())) {
+                    DFSRec(arista.getDestinoId(), visto, visitados);
+                }
             }
         }
     }
 
     public boolean detectarCiclo() {
-        Map<String, Boolean> visto = new HashMap<>();
-        Map<String, Boolean> enPila = new HashMap<>();
-        for (String id : listaAdyacencia.keySet()) {
-            if (detectarCicloRec(id, visto, enPila)) return true;
+        MapaHash<String, Boolean> visto = new MapaHash<>();
+        MapaHash<String, Boolean> enPila = new MapaHash<>();
+        ListaSimple<String> claves = listaAdyacencia.claves();
+        java.util.Iterator<String> it = claves.iterator();
+        while (it.hasNext()) {
+            String id = it.next();
+            if (detectarCicloRec(id, visto, enPila))
+                return true;
         }
         return false;
     }
 
-    private boolean detectarCicloRec(String id, Map<String, Boolean> visto,
-                                      Map<String, Boolean> enPila) {
-        if (enPila.getOrDefault(id, false)) return true;
-        if (visto.getOrDefault(id, false)) return false;
-        visto.put(id, true);
-        enPila.put(id, true);
-        List<AristaGrafo> vecinos = listaAdyacencia.getOrDefault(id, new ArrayList<>());
-        for (AristaGrafo arista : vecinos) {
-            if (detectarCicloRec(arista.getDestinoId(), visto, enPila)) return true;
+    private boolean detectarCicloRec(String id, MapaHash<String, Boolean> visto,
+            MapaHash<String, Boolean> enPila) {
+        Boolean enP = enPila.obtener(id);
+        if (enP != null && enP)
+            return true;
+        Boolean vis = visto.obtener(id);
+        if (vis != null && vis)
+            return false;
+        visto.poner(id, true);
+        enPila.poner(id, true);
+        ListaSimple<AristaGrafo> vecinos = listaAdyacencia.obtener(id);
+        if (vecinos != null) {
+            java.util.Iterator<AristaGrafo> it = vecinos.iterator();
+            while (it.hasNext()) {
+                AristaGrafo arista = it.next();
+                if (detectarCicloRec(arista.getDestinoId(), visto, enPila))
+                    return true;
+            }
         }
-        enPila.put(id, false);
+        enPila.poner(id, false);
         return false;
     }
 
-    public List<AristaGrafo> getRutasFrecuentes(String usuarioId) {
-        List<AristaGrafo> aristas = listaAdyacencia.getOrDefault(usuarioId, new ArrayList<>());
-        aristas.sort((a, b) -> Integer.compare(b.getFrecuencia(), a.getFrecuencia()));
-        return aristas;
+    public ListaSimple<AristaGrafo> getRutasFrecuentes(String usuarioId) {
+        ListaSimple<AristaGrafo> aristas = listaAdyacencia.obtener(usuarioId);
+        if (aristas == null)
+            return new ListaSimple<>();
+
+        int tam = aristas.getTamanio();
+        AristaGrafo[] arr = new AristaGrafo[tam];
+        for (int i = 0; i < tam; i++) {
+            arr[i] = aristas.obtener(i);
+        }
+
+        // Ordenamiento burbuja descendente por frecuencia
+        for (int i = 0; i < tam - 1; i++) {
+            for (int j = 0; j < tam - i - 1; j++) {
+                if (arr[j].getFrecuencia() < arr[j + 1].getFrecuencia()) {
+                    AristaGrafo temp = arr[j];
+                    arr[j] = arr[j + 1];
+                    arr[j + 1] = temp;
+                }
+            }
+        }
+
+        ListaSimple<AristaGrafo> resultado = new ListaSimple<>();
+        for (int i = 0; i < tam; i++) {
+            resultado.agregar(arr[i]);
+        }
+        return resultado;
     }
 
-    public Map<String, List<AristaGrafo>> getListaAdyacencia() { return listaAdyacencia; }
-    public Map<String, Usuario> getVertices() { return vertices; }
-    public int getTotalVertices() { return vertices.size(); }
+    public MapaHash<String, ListaSimple<AristaGrafo>> getListaAdyacencia() {
+        return listaAdyacencia;
+    }
+
+    public MapaHash<String, Usuario> getVertices() {
+        return vertices;
+    }
+
+    public int getTotalVertices() {
+        return vertices.getTamanio();
+    }
+
     public int getTotalAristas() {
         int total = 0;
-        for (List<AristaGrafo> lista : listaAdyacencia.values()) total += lista.size();
+        ListaSimple<ListaSimple<AristaGrafo>> listas = listaAdyacencia.valores();
+        java.util.Iterator<ListaSimple<AristaGrafo>> it = listas.iterator();
+        while (it.hasNext())
+            total += it.next().getTamanio();
         return total;
     }
 }

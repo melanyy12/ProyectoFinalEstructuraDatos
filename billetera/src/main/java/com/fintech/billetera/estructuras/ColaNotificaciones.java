@@ -1,8 +1,5 @@
 package com.fintech.billetera.estructuras;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.fintech.billetera.modelos.Alerta;
 
 public class ColaNotificaciones {
@@ -11,7 +8,7 @@ public class ColaNotificaciones {
     private int fin;
     private int tamanio;
     private static final int CAPACIDAD = 100;
-    private List<Alerta> historial;
+    private ListaSimple<Alerta> historial;
     private static final int MAX_HISTORIAL = 50;
 
     public ColaNotificaciones() {
@@ -19,7 +16,7 @@ public class ColaNotificaciones {
         this.frente = 0;
         this.fin = 0;
         this.tamanio = 0;
-        this.historial = new ArrayList<>();
+        this.historial = new ListaSimple<>();
     }
 
     public boolean encolar(Alerta alerta) {
@@ -35,23 +32,27 @@ public class ColaNotificaciones {
         Alerta alerta = cola[frente];
         frente = (frente + 1) % CAPACIDAD;
         tamanio--;
-        if (historial.size() >= MAX_HISTORIAL) historial.remove(0);
-        historial.add(alerta);
+        if (historial.getTamanio() >= MAX_HISTORIAL) historial.eliminar(historial.obtener(0));
+        historial.agregar(alerta);
         return alerta;
     }
 
-    public List<Alerta> getNoLeidas() {
-        List<Alerta> resultado = new ArrayList<>();
+    public ListaSimple<Alerta> getNoLeidas() {
+        ListaSimple<Alerta> resultado = new ListaSimple<>();
         for (int i = 0; i < tamanio; i++) {
             Alerta a = cola[(frente + i) % CAPACIDAD];
-            if (!a.isLeida()) resultado.add(a);
+            if (!a.isLeida()) resultado.agregar(a);
         }
         return resultado;
     }
 
-    public List<Alerta> getRecientes(int n) {
-        int cantidad = Math.min(n, historial.size());
-        return historial.subList(historial.size() - cantidad, historial.size());
+    public ListaSimple<Alerta> getRecientes(int n) {
+        ListaSimple<Alerta> resultado = new ListaSimple<>();
+        int desde = Math.max(0, historial.getTamanio() - n);
+        for (int i = desde; i < historial.getTamanio(); i++) {
+            resultado.agregar(historial.obtener(i));
+        }
+        return resultado;
     }
 
     public void marcarTodasLeidas() {

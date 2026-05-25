@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Beneficios - FintechWallet</title>
+    <link rel="stylesheet" th:href="@{/css/beneficios.css}"/>
+</head>
+
+<body>
+<nav class="navbar">
+    <h1>💳 FintechWallet</h1>
+    <div>
+        <a href="/">Inicio</a>
+        <a href="/analitica">Analítica</a>
+    </div>
+</nav>
+
+<div class="container">
+    <a th:href="@{/usuarios/{id}(id=${usuario.id})}" class="back-link">← Volver al perfil</a>
+
+    <div class="hero">
+        <div>
+            <h2>Beneficios y recompensas</h2>
+            <p th:text="${usuario.nombre}">Nombre</p>
+            <p th:text="${usuario.email}">email</p>
+            <span class="badge"
+                  th:classappend="${usuario.nivel.name() == 'BRONCE' ? 'badge-bronce' : (usuario.nivel.name() == 'PLATA' ? 'badge-plata' : (usuario.nivel.name() == 'ORO' ? 'badge-oro' : 'badge-platino'))}"
+                  th:text="${usuario.nivel}">
+                NIVEL
+            </span>
+        </div>
+
+        <div class="hero-side">
+            <div class="puntos-label">Puntos disponibles</div>
+            <div class="puntos-big" th:text="${usuario.puntosTotales}">0</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-header">
+            <div>
+                <h2>Centro de beneficios</h2>
+                <p class="section-subtitle">Canjea puntos por recompensas según tu nivel y saldo de puntos.</p>
+            </div>
+        </div>
+
+        <div class="info-puntos">
+            Tienes <strong th:text="${usuario.puntosTotales}">0</strong> puntos.
+            Los beneficios se descuentan automáticamente al canjearlos.
+        </div>
+
+        <div class="tabs">
+            <button type="button" class="tab-btn active" onclick="showTab('disponibles', this)">
+                Beneficios disponibles
+            </button>
+            <button type="button" class="tab-btn" onclick="showTab('todos', this)">
+                Todos los beneficios del nivel
+            </button>
+        </div>
+
+        <div id="disponibles" class="tab-content active">
+            <div class="beneficios-grid">
+                <div th:each="b : ${beneficiosDisponibles}" class="beneficio-card">
+                    <div class="beneficio-icon">🎁</div>
+                    <h3 th:text="${b.nombre}">Nombre</h3>
+                    <div class="beneficio-pts" th:text="${b.puntosRequeridos} + ' pts'">0 pts</div>
+                    <span class="beneficio-tipo"
+                          th:classappend="|tipo-${b.tipo}|"
+                          th:text="${b.tipo}">
+                        TIPO
+                    </span>
+
+                    <div class="beneficio-actions">
+                        <form th:action="@{/beneficios/canjear}" method="post">
+                            <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
+                            <input type="hidden" name="beneficioId" th:value="${b.id}"/>
+                            <button type="submit" class="btn"
+                                    onclick="return confirm('¿Deseas canjear este beneficio?')">
+                                Canjear beneficio
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <p th:if="${beneficiosDisponibles == null}" class="empty">
+                No tienes puntos suficientes o no cumples el nivel requerido para ningún beneficio aún.
+            </p>
+        </div>
+
+        <div id="todos" class="tab-content">
+            <div class="beneficios-grid">
+                <div th:each="b : ${todosBeneficios}" class="beneficio-card">
+                    <div class="beneficio-icon">⭐</div>
+                    <h3 th:text="${b.nombre}">Nombre</h3>
+                    <div class="beneficio-pts" th:text="${b.puntosRequeridos} + ' pts requeridos'">0 pts</div>
+                    <span class="beneficio-tipo"
+                          th:classappend="|tipo-${b.tipo}|"
+                          th:text="${b.tipo}">
+                        TIPO
+                    </span>
+
+                    <div class="beneficio-actions" th:if="${usuario.puntosTotales >= b.puntosRequeridos}">
+                        <form th:action="@{/beneficios/canjear}" method="post">
+                            <input type="hidden" name="usuarioId" th:value="${usuario.id}"/>
+                            <input type="hidden" name="beneficioId" th:value="${b.id}"/>
+                            <button type="submit" class="btn"
+                                    onclick="return confirm('¿Deseas canjear este beneficio?')">
+                                Canjear beneficio
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="beneficio-actions" th:if="${usuario.puntosTotales < b.puntosRequeridos}">
+                        <button class="btn-disabled" disabled>
+                            Faltan <span th:text="${b.puntosRequeridos - usuario.puntosTotales}">0</span> pts
+                        </button>
+                    </div>
+
+                    <p class="nivel-req" th:text="'Nivel requerido: ' + ${b.nivelRequerido}">NIVEL</p>
+                </div>
+            </div>
+
+            <p th:if="${todosBeneficios == null}" class="empty">
+                No hay beneficios disponibles para tu nivel actual.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showTab(tabId, button) {
+        document.querySelectorAll('.tab-content').forEach(function(tab) {
+            tab.classList.remove('active');
+        });
+
+        document.querySelectorAll('.tab-btn').forEach(function(btn) {
+            btn.classList.remove('active');
+        });
+
+        document.getElementById(tabId).classList.add('active');
+        button.classList.add('active');
+    }
+</script>
+</body>
+</html>

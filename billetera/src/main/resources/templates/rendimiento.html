@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Rendimiento - FintechWallet</title>
+    <link rel="stylesheet" th:href="@{/css/rendimiento.css}"/>
+</head>
+
+<body>
+<nav class="navbar">
+    <a href="/" class="brand">
+        <span class="brand-icon"></span>
+        <span>FintechWallet</span>
+    </a>
+
+    <div class="menu-wrapper">
+        <button type="button" class="menu-btn" onclick="toggleMenu(event)">
+            ☰ Menú
+        </button>
+
+        <div id="dropdownMenu" class="dropdown-menu">
+            <a href="/"> Inicio</a>
+            <a href="/analitica"> Analítica</a>
+            <a href="/rendimiento"> Rendimiento</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <a href="/analitica" class="back-link">← Volver a Analítica</a>
+
+    <div class="hero">
+        <div>
+            <h2>Comparador de rendimiento</h2>
+            <p>
+                Medición en nanosegundos de operaciones equivalentes entre estructuras de datos usadas en FintechWallet.
+            </p>
+        </div>
+        <div class="hero-badge">Estructuras de datos</div>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <h3>Usuarios en prueba</h3>
+            <p th:text="${totalUsuarios}">0</p>
+        </div>
+
+        <div class="stat-card">
+            <h3>Transacciones en prueba</h3>
+            <p th:text="${totalTransacciones}">0</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-header">
+            <div>
+                <h2> Búsqueda por ID</h2>
+                <p>Se busca cada usuario por su ID para comparar acceso secuencial contra acceso por clave.</p>
+            </div>
+            <span class="complexity-badge">Lista O(n) vs Hash O(1)</span>
+        </div>
+
+        <div class="comparacion">
+            <div class="estructura-card" th:classappend="${tiempoLista > tiempoHash ? 'perdedor' : 'ganador'}">
+                <h3>Lista enlazada</h3>
+                <div class="tiempo" th:text="${tiempoLista} + ' ns'">0 ns</div>
+                <div class="operacion">Búsqueda secuencial. Recorre elementos hasta encontrar el ID.</div>
+            </div>
+
+            <div class="estructura-card" th:classappend="${tiempoHash <= tiempoLista ? 'ganador' : 'perdedor'}">
+                <h3>
+                    Tabla hash
+                    <span class="badge-ganador" th:if="${tiempoHash <= tiempoLista}">Más rápido</span>
+                </h3>
+                <div class="tiempo" th:text="${tiempoHash} + ' ns'">0 ns</div>
+                <div class="operacion">Acceso directo por clave usando el ID del usuario.</div>
+            </div>
+        </div>
+
+        <div class="conclusion">
+            <strong>Conclusión:</strong> La tabla hash es más eficiente para localizar usuarios y billeteras por ID.
+            Por eso resulta ideal para búsquedas rápidas dentro de la billetera digital.
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-header">
+            <div>
+                <h2> Ordenamiento por puntos</h2>
+                <p>Se insertan los usuarios y se obtiene el ranking por puntos acumulados.</p>
+            </div>
+            <span class="complexity-badge">Sort O(n log n) vs BST</span>
+        </div>
+
+        <div class="comparacion">
+            <div class="estructura-card" th:classappend="${tiempoListaSort > tiempoBST ? 'perdedor' : 'ganador'}">
+                <h3>Lista + sort</h3>
+                <div class="tiempo" th:text="${tiempoListaSort} + ' ns'">0 ns</div>
+                <div class="operacion">Primero guarda los usuarios y luego ordena toda la colección.</div>
+            </div>
+
+            <div class="estructura-card" th:classappend="${tiempoBST <= tiempoListaSort ? 'ganador' : 'perdedor'}">
+                <h3>
+                    Árbol BST
+                    <span class="badge-ganador" th:if="${tiempoBST <= tiempoListaSort}">Más rápido</span>
+                </h3>
+                <div class="tiempo" th:text="${tiempoBST} + ' ns'">0 ns</div>
+                <div class="operacion">Mantiene una estructura ordenada para generar rankings de fidelización.</div>
+            </div>
+        </div>
+
+        <div class="conclusion">
+            <strong>Conclusión:</strong> El árbol BST ayuda a organizar usuarios por puntos y nivel de fidelización,
+            facilitando la construcción del ranking usado en Analítica.
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-header">
+            <div>
+                <h2> Procesamiento de operaciones</h2>
+                <p>Se insertan y extraen transacciones para comparar pila y cola.</p>
+            </div>
+            <span class="complexity-badge">LIFO vs FIFO</span>
+        </div>
+
+        <div class="comparacion">
+            <div class="estructura-card" th:classappend="${tiempoPila > tiempoCola ? 'perdedor' : 'ganador'}">
+                <h3>
+                    Pila
+                    <span class="badge-ganador" th:if="${tiempoPila <= tiempoCola}">Más rápido</span>
+                </h3>
+                <div class="tiempo" th:text="${tiempoPila} + ' ns'">0 ns</div>
+                <div class="operacion">LIFO: la última operación entra primero al proceso de reversión.</div>
+            </div>
+
+            <div class="estructura-card" th:classappend="${tiempoCola <= tiempoPila ? 'ganador' : 'perdedor'}">
+                <h3>
+                    Cola
+                    <span class="badge-ganador" th:if="${tiempoCola <= tiempoPila}">Más rápido</span>
+                </h3>
+                <div class="tiempo" th:text="${tiempoCola} + ' ns'">0 ns</div>
+                <div class="operacion">FIFO: las notificaciones se atienden en el orden en que llegan.</div>
+            </div>
+        </div>
+
+        <div class="conclusion">
+            <strong>Conclusión:</strong> Ambas estructuras resuelven necesidades distintas. La pila es adecuada para
+            revertir la última transacción y la cola para procesar alertas o notificaciones en orden.
+        </div>
+    </div>
+
+    <div class="footer-note">
+        <strong>Nota:</strong> Los tiempos pueden variar en cada ejecución porque dependen del equipo, la JVM y la cantidad
+        de datos cargados. Lo importante para el informe es comparar el comportamiento general de cada estructura.
+    </div>
+</div>
+
+<script>
+    function toggleMenu(event) {
+        event.stopPropagation();
+        const menu = document.getElementById('dropdownMenu');
+        menu.classList.toggle('show');
+    }
+
+    document.addEventListener('click', function(event) {
+        const menu = document.getElementById('dropdownMenu');
+        const wrapper = document.querySelector('.menu-wrapper');
+
+        if (menu && wrapper && !wrapper.contains(event.target)) {
+            menu.classList.remove('show');
+        }
+    });
+</script>
+</body>
+</html>
