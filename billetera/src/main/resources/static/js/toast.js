@@ -8,6 +8,6 @@ document.addEventListener("DOMContentLoaded", function () {
             setTimeout(function () {
                 toast.remove();
             }, 300);
-        }, 3000);
+        }, 2000);
     });
 });
