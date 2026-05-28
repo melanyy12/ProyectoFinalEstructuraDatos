@@ -4,8 +4,8 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 
 import com.fintech.billetera.estructuras.ArbolFidelizacion;
 import com.fintech.billetera.estructuras.ColaNotificaciones;
@@ -25,10 +25,10 @@ import com.fintech.billetera.modelos.TipoTransaccion;
 import com.fintech.billetera.modelos.Transaccion;
 import com.fintech.billetera.modelos.TxnProgramada;
 import com.fintech.billetera.modelos.Usuario;
+import com.fintech.billetera.repositorios.AuditoriaRepositorio;
 import com.fintech.billetera.repositorios.BilleteraRepositorio;
 import com.fintech.billetera.repositorios.TransaccionRepositorio;
 import com.fintech.billetera.repositorios.UsuarioRepositorio;
-import com.fintech.billetera.repositorios.AuditoriaRepositorio;
 
 import jakarta.annotation.PostConstruct;
 
@@ -431,10 +431,12 @@ public class GestorOperaciones {
 }
 
     @Scheduled(fixedDelay = 60000)
-    public void ejecutarProgramadasAutomaticamente() {
-        ejecutarProgramadas();
-    }
+public void ejecutarProgramadasAutomaticamente() {
 
+    System.out.println(">>> Ejecutando programadas...");
+
+    ejecutarProgramadas();
+}
     private void verificarSaldoBajo(Billetera billetera, String usuarioId) {
         if (billetera != null && billetera.getSaldo() < 50000) {
             generarAlerta(new Alerta("A" + System.currentTimeMillis(),
